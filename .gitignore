@@ -18,3 +18,4 @@ Thumbs.db
 
 # Test coverage
 coverage/
+coverage.lcov

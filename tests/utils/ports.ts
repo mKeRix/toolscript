@@ -1,3 +1,4 @@
+// deno-coverage-ignore-file
 /**
  * Utility for getting random free ports for testing.
  */

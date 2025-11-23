@@ -1,3 +1,4 @@
+// deno-coverage-ignore-file
 /**
  * Test utilities for managing gateway and MCP server processes in E2E tests.
  */

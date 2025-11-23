@@ -6,6 +6,7 @@
     "dev": "deno run --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys src/cli/main.ts",
     "cli": "deno run --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys src/cli/main.ts",
     "test": "deno test --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys",
+    "test:cov": "deno test --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys --coverage=coverage/",
     "fmt": "deno fmt",
     "fmt:check": "deno fmt --check",
     "lint": "deno lint",

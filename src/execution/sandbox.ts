@@ -78,6 +78,7 @@ export async function executeSandboxed(options: SandboxOptions): Promise<{
         "--no-prompt",
         codeFile,
       ],
+      clearEnv: true,
       env: {
         TOOLSCRIPT_GATEWAY_URL: gatewayUrl,
         DENO_NO_UPDATE_CHECK: "1", // Disable update check
