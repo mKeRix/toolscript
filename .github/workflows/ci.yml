@@ -27,9 +27,15 @@ jobs:
         run: deno task lint
 
       - name: Run tests
-        run: deno task test:cov
+        run: deno task test:cov --junit-path=./junit.xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

@@ -19,3 +19,4 @@ Thumbs.db
 # Test coverage
 coverage/
 coverage.lcov
+junit.xml
