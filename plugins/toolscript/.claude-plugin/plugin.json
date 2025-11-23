@@ -1,0 +1,12 @@
+{
+  "name": "toolscript",
+  "version": "0.1.0",
+  "description": "Execute TypeScript code that calls MCP tools with full type safety",
+  "author": {
+    "name": "Heiko Rothe",
+    "email": "me@heikorothe.com",
+    "url": "https://github.com/mKeRix"
+  },
+  "homepage": "https://github.com/mKeRix/toolscript",
+  "repository": "https://github.com/mKeRix/toolscript"
+}
