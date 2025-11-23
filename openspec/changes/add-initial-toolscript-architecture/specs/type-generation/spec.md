@@ -2,35 +2,12 @@
 
 ## ADDED Requirements
 
-### Requirement: OpenAPI Conversion
-The type generator SHALL convert MCP tool schemas to OpenAPI 3.0 format.
+### Requirement: JSON Schema Type Generation
+The type generator SHALL use json-schema-to-typescript to generate TypeScript interfaces from MCP JSON Schema.
 
-#### Scenario: Input schema conversion
-- **WHEN** MCP tool defines inputSchema
-- **THEN** system converts to OpenAPI requestBody schema
-
-#### Scenario: Output schema conversion
-- **WHEN** MCP tool defines output type
-- **THEN** system converts to OpenAPI response schema
-
-#### Scenario: Schema references
-- **WHEN** schema contains $ref to shared definitions
-- **THEN** system resolves and includes referenced schemas
-
-#### Scenario: Primitive types
-- **WHEN** schema uses string, number, boolean, null
-- **THEN** system maps to equivalent OpenAPI types
-
-#### Scenario: Complex types
-- **WHEN** schema uses objects, arrays, or unions
-- **THEN** system preserves structure in OpenAPI format
-
-### Requirement: TypeScript Type Generation
-The type generator SHALL use openapi-typescript to generate type definitions.
-
-#### Scenario: Generate types from OpenAPI
-- **WHEN** OpenAPI schema is available
-- **THEN** system invokes openapi-typescript to generate .d.ts file
+#### Scenario: Generate types from JSON Schema
+- **WHEN** MCP tool defines inputSchema or outputSchema
+- **THEN** system invokes json-schema-to-typescript compile() to generate TypeScript interface
 
 #### Scenario: Server-level types
 - **WHEN** generating types for entire server
@@ -42,7 +19,19 @@ The type generator SHALL use openapi-typescript to generate type definitions.
 
 #### Scenario: Type naming
 - **WHEN** generating TypeScript types
-- **THEN** system uses PascalCase for type names and camelCase for properties
+- **THEN** system uses PascalCase for type names (e.g., ServerNameToolNameParams)
+
+#### Scenario: JSDoc comment generation
+- **WHEN** JSON Schema contains description fields
+- **THEN** system generates JSDoc comments for parameters
+
+#### Scenario: Complex schema support
+- **WHEN** schema contains enums, unions, or conditional types
+- **THEN** system generates appropriate TypeScript constructs
+
+#### Scenario: Schema validation
+- **WHEN** JSON Schema is invalid or malformed
+- **THEN** system logs warning and generates fallback empty interface
 
 ### Requirement: Name Validation and Conversion
 The type generator SHALL validate and convert server names and tool names to valid JavaScript/TypeScript identifiers following camelCase for functions and namespaces, PascalCase for types.

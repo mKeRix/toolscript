@@ -18,12 +18,13 @@ Toolscript is a Deno-native CLI tool and Claude Code plugin for implementing MCP
 - **TypeScript**: Strict mode for type safety throughout codebase
 
 ### Core Dependencies
-- **@hono/hono**: Lightweight HTTP server framework for gateway
-- **@hono/zod-openapi**: OpenAPI schema generation and validation
+- **@hono/hono**: Lightweight HTTP server framework for gateway routing
+- **@cliffy/command**: CLI framework for argument parsing and commands
+- **@cliffy/table**: Table formatting for CLI output
+- **@logtape/logtape**: Zero-dependency structured logging library
 - **@modelcontextprotocol/sdk**: Official MCP SDK for client connections
-- **openapi-typescript**: Generate TypeScript types from OpenAPI schemas
-- **zod**: Runtime type validation and schema definition
-- **ts-morph**: TypeScript AST manipulation for code generation
+- **json-schema-to-typescript**: Generate TypeScript types from JSON Schema
+- **zod**: Runtime type validation and schema definition for MCP servers
 
 ### Distribution
 - **JSR (JavaScript Registry)**: Primary package distribution
@@ -150,10 +151,11 @@ Config  Types   Types
 - Secure by default, opt-in to permissions
 
 ### TypeScript Type Generation
-- OpenAPI schemas define REST API contracts
-- openapi-typescript generates .d.ts files from OpenAPI
+- MCP tools define JSON Schema for input/output validation
+- json-schema-to-typescript generates TypeScript interfaces from JSON Schema
 - Types enable compile-time checking and IDE autocomplete
 - Zero runtime overhead (types erased after compilation)
+- Supports JSDoc comments extracted from schema descriptions
 
 ## Important Constraints
 

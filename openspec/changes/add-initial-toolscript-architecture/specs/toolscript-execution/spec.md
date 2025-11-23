@@ -112,14 +112,6 @@ The execution engine SHALL capture and route toolscript output correctly.
 - **WHEN** toolscript calls `console.error()`
 - **THEN** system writes output to stderr
 
-#### Scenario: Primitive return values
-- **WHEN** toolscript returns string, number, or boolean
-- **THEN** system writes value to stdout without JSON wrapping
-
-#### Scenario: Object return values
-- **WHEN** toolscript returns object or array
-- **THEN** system serializes as JSON with pretty printing
-
 ### Requirement: Error Handling
 The execution engine SHALL capture and report errors clearly.
 

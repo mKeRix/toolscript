@@ -78,12 +78,12 @@ Research into existing implementations reveals several approaches:
 
 ### 3. Type Generation and HTTP Import Strategy
 
-**Decision**: Pre-generate all types at gateway startup using openapi-typescript with in-memory cache, serve via HTTP endpoint for Deno HTTP imports, and use Deno import maps for clean import syntax.
+**Decision**: Pre-generate all types at gateway startup using json-schema-to-typescript with in-memory cache, serve via HTTP endpoint for Deno HTTP imports, and use Deno import maps for clean import syntax.
 
 **Rationale**:
-- MCP tool schemas are similar to OpenAPI InputSchema
-- openapi-typescript is mature, well-tested
-- Generated types provide compile-time safety
+- MCP tool schemas use JSON Schema format
+- json-schema-to-typescript is mature, handles complex schemas (enums, unions, conditionals)
+- Generated types provide compile-time safety with JSDoc comments from descriptions
 - Zero runtime overhead
 - No latency during toolscript execution
 - In-memory cache is simpler and instance-scoped by default
@@ -95,7 +95,8 @@ Research into existing implementations reveals several approaches:
 **Alternatives Considered**:
 - Runtime type checking only: Misses compile-time errors
 - Manual type definitions: Not scalable, gets stale
-- ts-morph AST manipulation (lootbox approach): More complex, reinventing openapi-typescript
+- ts-morph AST manipulation (lootbox approach): More complex, reinventing json-schema-to-typescript
+- openapi-typescript: Designed for OpenAPI, not JSON Schema (MCP uses JSON Schema)
 - On-demand generation: Adds latency to first use of each tool
 - File-based cache: More complex, conflicts with in-memory approach
 - Pre-generate and mount files: Requires file system mounting, more complex than HTTP import
@@ -457,10 +458,13 @@ N/A (new project, no migration needed)
 5. **Tool namespacing**: Use `__` separator (e.g., `github__create_issue`)
    - Clear, readable, standard convention
 
-6. **CLI libraries**:
-   - CLI framework: cliffy (Deno-native, mature)
+6. **Core libraries**:
+   - HTTP routing: Hono (lightweight, fast, Deno-native)
+   - CLI framework: cliffy (Deno-native, mature, includes table formatting)
    - Logging: logtape (zero dependencies, Deno-native)
    - MCP SDK: @modelcontextprotocol/sdk (official TypeScript SDK)
+   - Type generation: json-schema-to-typescript (handles JSON Schema, not OpenAPI)
+   - Validation: zod (for MCP server tool schemas)
 
 7. **Development tooling**:
    - Formatting: Deno's built-in `deno fmt` (no Prettier needed)

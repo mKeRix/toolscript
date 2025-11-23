@@ -1,0 +1,13 @@
+{
+  "name": "toolscript",
+  "owner": {
+    "name": "Heiko Rothe"
+  },
+  "plugins": [
+    {
+      "name": "toolscript",
+      "source": "./plugins/toolscript",
+      "description": "Use MCP servers in code mode"
+    }
+  ]
+}
