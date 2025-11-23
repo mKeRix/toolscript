@@ -109,7 +109,8 @@ export class GatewayServer {
 
     // List tools
     app.get("/tools", (c) => {
-      const tools = this.aggregator.getAllTools();
+      const serverFilter = c.req.query("server");
+      const tools = this.aggregator.getFilteredTools(serverFilter);
       return c.json(tools);
     });
 

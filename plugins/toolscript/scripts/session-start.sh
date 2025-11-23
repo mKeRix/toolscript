@@ -28,8 +28,8 @@ elif [ -z "$CLAUDE_ENV_FILE" ]; then
     echo "ERROR: CLAUDE_ENV_FILE not set and CLAUDE_SESSION_ID is not available" >> "$LOG_FILE"
 fi
 
-# Find a free port
-FREE_PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()')
+# Find a free port using Deno
+FREE_PORT=$(deno eval 'const l = Deno.listen({ port: 0 }); console.log(l.addr.port); l.close();')
 
 # Start gateway on the free port in background
 toolscript gateway start --port "$FREE_PORT" > "$LOG_FILE" 2>&1 &

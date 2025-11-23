@@ -62,14 +62,13 @@ export const listToolsCommand = new Command()
     const gatewayUrl = options.gatewayUrl;
 
     try {
-      const response = await fetch(`${gatewayUrl}/tools`);
+      const response = await fetch(`${gatewayUrl}/tools?server=${server}`);
       if (!response.ok) {
         console.error(`Failed to fetch tools: ${response.statusText}`);
         Deno.exit(1);
       }
 
-      const tools = await response.json();
-      const serverTools = tools.filter((t: { serverName: string }) => t.serverName === server);
+      const serverTools = await response.json();
 
       if (serverTools.length === 0) {
         console.log(`No tools found for server: ${server}`);

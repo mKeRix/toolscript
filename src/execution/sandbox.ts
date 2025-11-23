@@ -45,11 +45,11 @@ export async function executeSandboxed(options: SandboxOptions): Promise<{
   // Create import map
   const importMapPath = await createImportMap(gatewayUrl);
 
-  try {
-    // Prepare code for execution
-    let codeFile: string;
-    let cleanupCodeFile = false;
+  // Prepare code for execution
+  let codeFile: string | undefined;
+  let cleanupCodeFile = false;
 
+  try {
     if (isFile) {
       // Code is a file path
       codeFile = code;
@@ -95,14 +95,20 @@ export async function executeSandboxed(options: SandboxOptions): Promise<{
     const stderr = new TextDecoder().decode(output.stderr);
     const success = output.success;
 
-    // Cleanup
-    if (cleanupCodeFile) {
-      await Deno.remove(codeFile);
-    }
-
     return { stdout, stderr, success };
   } finally {
-    // Always cleanup import map
-    await Deno.remove(importMapPath);
+    // Always cleanup temporary resources
+    if (cleanupCodeFile && codeFile) {
+      try {
+        await Deno.remove(codeFile);
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+    try {
+      await Deno.remove(importMapPath);
+    } catch {
+      // Ignore cleanup errors
+    }
   }
 }

@@ -82,9 +82,7 @@ export class McpClient {
 
     // Get server information
     const version = this.client.getServerVersion();
-    const instructions =
-      (this.client as unknown as { _initializeResult?: { instructions?: string } })
-        ._initializeResult?.instructions;
+    const instructions = this.client.getInstructions();
 
     this.serverInfo = {
       name: version?.name || this.name,
