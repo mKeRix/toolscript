@@ -9,7 +9,7 @@ import { gatewayCommand } from "./commands/gateway.ts";
 import { execCommand } from "./commands/exec.ts";
 import { listServersCommand, listToolsCommand } from "./commands/list.ts";
 import { getTypesCommand } from "./commands/types.ts";
-import packageInfo from "../../deno.json" with {type: "json"}
+import packageInfo from "../../deno.json" with { type: "json" };
 
 /**
  * Main CLI command

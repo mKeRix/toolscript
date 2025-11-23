@@ -26,7 +26,7 @@ Deno.test("ServerAggregator should handle empty configuration", async () => {
   await aggregator.shutdown();
 });
 
-Deno.test("ServerAggregator should get all tools from single server", async () => {
+Deno.test("ServerAggregator should get all tools from single server", () => {
   const aggregator = new ServerAggregator();
 
   // We can't easily mock the McpClient in the aggregator without dependency injection

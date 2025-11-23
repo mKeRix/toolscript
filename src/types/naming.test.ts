@@ -3,13 +3,7 @@
  */
 
 import { assertEquals } from "@std/assert";
-import {
-  toCamelCase,
-  toFunctionId,
-  toNamespaceId,
-  toPascalCase,
-  toTypeName,
-} from "./naming.ts";
+import { toCamelCase, toFunctionId, toNamespaceId, toPascalCase, toTypeName } from "./naming.ts";
 
 Deno.test("toCamelCase should convert snake_case to camelCase", () => {
   assertEquals(toCamelCase("create_issue"), "createIssue");

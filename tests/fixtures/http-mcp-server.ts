@@ -29,7 +29,7 @@ mcpServer.tool(
   {
     name: z.string().describe("Name to greet"),
   },
-  async ({ name }) => {
+  ({ name }) => {
     return {
       content: [
         {
@@ -48,7 +48,7 @@ mcpServer.tool(
     x: z.number().describe("First number"),
     y: z.number().describe("Second number"),
   },
-  async ({ x, y }) => {
+  ({ x, y }) => {
     const result = x * y;
     return {
       content: [

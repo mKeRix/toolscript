@@ -81,10 +81,6 @@ Deno.test("errors can be caught as ToolscriptError base class", () => {
   ];
 
   for (const error of errors) {
-    try {
-      throw error;
-    } catch (e) {
-      assertInstanceOf(e, ToolscriptError);
-    }
+    assertInstanceOf(error, ToolscriptError);
   }
 });

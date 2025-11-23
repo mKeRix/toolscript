@@ -6,10 +6,7 @@
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
+import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import express from "express";
 
 // Get port from command line args
@@ -112,7 +109,7 @@ const app = express();
 app.use(express.json());
 
 // SSE endpoint - establishes the event stream
-app.get("/sse", async (req, res) => {
+app.get("/sse", async (_req, res) => {
   const transport = new SSEServerTransport("/message", res);
   transports[transport.sessionId] = transport;
 

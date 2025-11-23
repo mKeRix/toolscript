@@ -8,7 +8,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import type { ServerConfig } from "../config/types.ts";
 import { getLogger } from "../utils/logger.ts";
-import packageInfo from "../../deno.json" with { type: "json" }
+import packageInfo from "../../deno.json" with { type: "json" };
 
 const logger = getLogger("mcp-client");
 
@@ -27,7 +27,11 @@ export interface ServerInfo {
  */
 export class McpClient {
   private client: Client | null = null;
-  private transport: StdioClientTransport | StreamableHTTPClientTransport | SSEClientTransport | null = null;
+  private transport:
+    | StdioClientTransport
+    | StreamableHTTPClientTransport
+    | SSEClientTransport
+    | null = null;
   private serverInfo: ServerInfo | null = null;
 
   constructor(
@@ -51,15 +55,11 @@ export class McpClient {
       });
     } else if (this.config.type === "http") {
       const url = new URL(this.config.url);
-      const options = this.config.headers
-        ? { requestInit: { headers: this.config.headers } }
-        : {};
+      const options = this.config.headers ? { requestInit: { headers: this.config.headers } } : {};
       this.transport = new StreamableHTTPClientTransport(url, options);
     } else if (this.config.type === "sse") {
       const url = new URL(this.config.url);
-      const options = this.config.headers
-        ? { requestInit: { headers: this.config.headers } }
-        : {};
+      const options = this.config.headers ? { requestInit: { headers: this.config.headers } } : {};
       this.transport = new SSEClientTransport(url, options);
     } else {
       // TypeScript exhaustiveness check
@@ -82,7 +82,9 @@ export class McpClient {
 
     // Get server information
     const version = this.client.getServerVersion();
-    const instructions = (this.client as any)._initializeResult?.instructions;
+    const instructions =
+      (this.client as unknown as { _initializeResult?: { instructions?: string } })
+        ._initializeResult?.instructions;
 
     this.serverInfo = {
       name: version?.name || this.name,
@@ -135,7 +137,9 @@ export class McpClient {
   /**
    * List available tools from this server
    */
-  async listTools(): Promise<Array<{ name: string; description?: string; inputSchema: unknown; outputSchema?: unknown }>> {
+  async listTools(): Promise<
+    Array<{ name: string; description?: string; inputSchema: unknown; outputSchema?: unknown }>
+  > {
     const client = this.getClient();
     try {
       const response = await client.listTools();

@@ -32,7 +32,7 @@
     "semiColons": true,
     "singleQuote": false,
     "proseWrap": "preserve",
-    "exclude": ["**/*.md"]
+    "exclude": ["**/*.md", ".claude/**"]
   },
   "lint": {
     "rules": {

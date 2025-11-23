@@ -7,7 +7,7 @@ import { executeSandboxed } from "../../src/execution/sandbox.ts";
 import { getRandomPort } from "../utils/ports.ts";
 
 // Mock gateway server for testing
-async function startMockGateway(port: number): Promise<Deno.HttpServer> {
+function startMockGateway(port: number): Deno.HttpServer {
   const handler = (req: Request): Response => {
     const url = new URL(req.url);
 
