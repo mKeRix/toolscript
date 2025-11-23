@@ -62,7 +62,7 @@ export class GatewayServer {
           const urlHostname = hostname.includes(":") ? `[${hostname}]` : hostname;
           const gatewayUrl = `http://${urlHostname}:${port}`;
           logger.info(`Gateway server listening on ${gatewayUrl}`);
-          console.log(`To access the gateway, run: export TOOLSCRIPT_GATEWAY_URL=${gatewayUrl}`);
+          logger.info(`To access the gateway, run: export TOOLSCRIPT_GATEWAY_URL=${gatewayUrl}`);
         },
       },
       app.fetch,
