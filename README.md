@@ -7,6 +7,7 @@ Toolscript is a lightweight CLI tool and Claude Code plugin that enables LLMs to
 ## Features
 
 - **Type-Safe MCP Access**: Automatic TypeScript type generation from MCP tool schemas
+- **Semantic Tool Search**: AI-powered search using embeddings + fuzzy matching for tool discovery
 - **Sandboxed Execution**: Secure Deno sandbox with minimal permissions
 - **Zero Configuration**: Works out of the box, add config only when needed
 - **Claude Plugin**: Automatic gateway lifecycle management via SessionStart/SessionEnd hooks
@@ -100,7 +101,13 @@ toolscript exec 'import { tools } from "toolscript"; console.log(await tools.fil
 
 ```bash
 # Start gateway (runs until stopped)
-toolscript gateway start [--port <port>] [--config <path>]
+toolscript gateway start [--port <port>] [--hostname <host>] [--config <path>]
+
+# Configure semantic search
+toolscript gateway start \
+  --search-device cpu \
+  --search-model "Xenova/all-MiniLM-L6-v2" \
+  --search-alpha 0.7
 
 # Check status
 toolscript gateway status [--pid-file <path>]
@@ -110,13 +117,29 @@ toolscript gateway status [--pid-file <path>]
 
 ```bash
 # List configured servers
-toolscript list-servers [--config <path>]
+toolscript list-servers
 
 # List tools from a server (requires running gateway)
 toolscript list-tools <server-name>
 
 # Get TypeScript types for tools
-toolscript get-types <server-name> [tool-name]
+toolscript get-types --filter <server-name>
+toolscript get-types --filter <server-name>,<server2-name>__<tool-name>
+```
+
+### Search
+
+```bash
+# Search for tools using semantic + fuzzy matching
+toolscript search "add two numbers" --limit 5
+
+# Output as TypeScript types
+toolscript search "file operations" --output types
+
+# Adjust search parameters
+toolscript search "text manipulation" \
+  --limit 3 \
+  --threshold 0.4
 ```
 
 ### Execution
@@ -128,6 +151,8 @@ toolscript exec '<code>'
 # Execute from file
 toolscript exec --file <path>
 ```
+
+For detailed CLI documentation, see [docs/cli.md](docs/cli.md).
 
 ## Claude Code Plugin
 

@@ -7,6 +7,8 @@ import type { ToolscriptConfig } from "../config/types.ts";
 import { ServerAggregator } from "./aggregator.ts";
 import { generateToolsModule, TypeCache } from "../types/generator.ts";
 import { getLogger } from "../utils/logger.ts";
+import { SearchEngine } from "../search/mod.ts";
+import type { ToolMetadata } from "../search/mod.ts";
 
 const logger = getLogger("gateway");
 
@@ -16,6 +18,7 @@ const logger = getLogger("gateway");
 export interface GatewayOptions {
   port?: number;
   hostname?: string;
+  searchConfig?: Record<string, unknown>;
 }
 
 /**
@@ -24,6 +27,7 @@ export interface GatewayOptions {
 export class GatewayServer {
   private aggregator: ServerAggregator;
   private typeCache: TypeCache;
+  private searchEngine: SearchEngine | null = null;
   private server: Deno.HttpServer | null = null;
   private port = 0;
   private hostname = "localhost";
@@ -47,6 +51,9 @@ export class GatewayServer {
 
     // Generate initial types
     await this.regenerateTypes();
+
+    // Initialize search engine
+    await this.initializeSearchEngine(config, options.searchConfig);
 
     // Create Hono app with routes
     const app = this.createApp();
@@ -98,7 +105,13 @@ export class GatewayServer {
 
     // Health check
     app.get("/health", (c) => {
-      return c.json({ status: "ok" });
+      return c.json({
+        status: "ok",
+        search: {
+          ready: this.searchEngine?.isInitialized() ?? false,
+          semantic: this.searchEngine?.isSemanticAvailable() ?? false,
+        },
+      });
     });
 
     // List servers
@@ -109,19 +122,49 @@ export class GatewayServer {
 
     // List tools
     app.get("/tools", (c) => {
-      const serverFilter = c.req.query("server");
-      const tools = this.aggregator.getFilteredTools(serverFilter);
+      const filter = c.req.query("filter");
+      const tools = filter
+        ? this.aggregator.getToolsByFilter(filter)
+        : this.aggregator.getAllTools();
       return c.json(tools);
+    });
+
+    // Search tools
+    app.get("/search", async (c) => {
+      if (!this.searchEngine || !this.searchEngine.isInitialized()) {
+        return c.json({ error: "Search engine not initialized" }, 503);
+      }
+
+      const query = c.req.query("q");
+      if (!query) {
+        return c.json({ error: "Query parameter 'q' is required" }, 400);
+      }
+
+      const limit = parseInt(c.req.query("limit") || "3", 10);
+      const threshold = parseFloat(c.req.query("threshold") || "0.35");
+
+      const results = await this.searchEngine.search(query, limit, threshold);
+      return c.json(results);
+    });
+
+    // Search stats
+    app.get("/search/stats", (c) => {
+      if (!this.searchEngine) {
+        return c.json({ error: "Search engine not initialized" }, 503);
+      }
+
+      const stats = this.searchEngine.getStats();
+      return c.json(stats);
     });
 
     // Runtime tools module
     app.get("/runtime/tools.ts", async (c) => {
-      const serverFilter = c.req.query("server");
-      const toolFilter = c.req.query("tool");
+      // Filter parameter (comma-separated tool identifiers)
+      const filter = c.req.query("filter");
 
-      if (serverFilter || toolFilter) {
-        // Generate filtered module on-demand
-        const tools = this.aggregator.getFilteredTools(serverFilter, toolFilter);
+      if (filter) {
+        // Generate filtered module
+        const tools = this.aggregator.getToolsByFilter(filter);
         const gatewayUrl = `http://${this.hostname}:${this.port}`;
         const module = await generateToolsModule(tools, gatewayUrl);
         return c.text(module, 200, { "Content-Type": "application/typescript" });
@@ -164,5 +207,44 @@ export class GatewayServer {
     const module = await generateToolsModule(tools, gatewayUrl);
     this.typeCache.set(module);
     logger.info(`Generated types for ${tools.length} tools`);
+  }
+
+  /**
+   * Initialize the search engine with tools from all connected servers
+   */
+  private async initializeSearchEngine(
+    config: ToolscriptConfig,
+    searchConfig?: Record<string, unknown>,
+  ): Promise<void> {
+    try {
+      // Get server names for config hash
+      const serverNames = Object.keys(config.mcpServers);
+
+      // Create and initialize search engine
+      // SearchEngine constructor merges config with defaults
+      this.searchEngine = new SearchEngine(searchConfig || {});
+      await this.searchEngine.initialize(serverNames);
+
+      // Convert aggregator tools to search ToolMetadata format
+      const aggregatorTools = this.aggregator.getAllTools();
+      const searchTools: ToolMetadata[] = aggregatorTools.map((t) => ({
+        serverName: t.serverName,
+        toolName: t.toolName,
+        toolId: t.qualifiedName,
+        description: t.description || "",
+        inputSchema: t.inputSchema,
+      }));
+
+      // Index all tools
+      await this.searchEngine.indexTools(searchTools);
+
+      const stats = this.searchEngine.getStats();
+      logger.info(
+        `Search engine initialized: ${stats.toolsIndexed} tools indexed, semantic=${stats.semanticAvailable}`,
+      );
+    } catch (error) {
+      logger.error(`Failed to initialize search engine: ${error}`);
+      // Search is optional - gateway continues without it
+    }
   }
 }

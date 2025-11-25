@@ -29,14 +29,28 @@ Use toolscript when:
 
 ## Recommended Workflow
 
-Follow this workflow to discover and call MCP tools:
+Use semantic search for efficient tool discovery:
 
-1. **List configured servers** - Understand what MCP servers are available
-2. **List tools for a server** - See which specific tools a server provides
-3. **Get tool types** - Inspect input/output schema for a specific tool
-4. **Execute toolscript** - Call the tool with proper parameters
+1. **Search for tools** - Find relevant tools using natural language
+2. **Get tool types** - Use `--output types` to get TypeScript code directly
+3. **Execute toolscript** - Call the tool with proper parameters
 
-This progressive discovery approach ensures proper tool selection and correct parameter usage.
+### Quick Workflow (Preferred)
+
+```bash
+# Search and get types in one command
+toolscript search "find files containing text" --output types
+```
+
+This returns a confidence table plus ready-to-use TypeScript code.
+
+### Alternative Workflow (Fallback)
+
+If search is unavailable or you need to browse all tools:
+
+1. **List servers** - `toolscript list-servers`
+2. **List tools** - `toolscript list-tools <server>`
+3. **Get types** - `toolscript get-types --filter <server>`
 
 ## Gateway and Authentication
 
@@ -51,9 +65,52 @@ The toolscript gateway is automatically started when your Claude Code session be
 
 ## Available Commands
 
-### 1. List Configured Servers
+### 1. Search for Tools (Recommended)
 
-Start by discovering what MCP servers are available:
+Search for tools using natural language:
+
+```bash
+toolscript search "<query>" [--limit <n>] [--threshold <score>] [--output <format>]
+```
+
+**Examples:**
+
+```bash
+# Find file-related tools (table output, default)
+toolscript search "read files from disk"
+
+# Get TypeScript types directly (types output)
+toolscript search "commit git changes" --output types
+
+# Find more results with lower threshold
+toolscript search "github api" --limit 5 --threshold 0.2
+```
+
+**Output Formats:**
+
+- `--output table` (default): Human-readable table with tool ID, confidence, and description
+- `--output types`: Markdown with confidence table + TypeScript code ready for execution
+
+**Types Output Example:**
+
+```markdown
+## Search Results
+
+| Tool | Confidence | Reason |
+|------|------------|--------|
+| git__commit | 85.0% | semantic match, keyword match |
+| github__create_commit | 72.3% | partial semantic match |
+
+\`\`\`typescript
+// Generated TypeScript code for the matched tools
+import { tools } from "toolscript";
+// ...
+\`\`\`
+```
+
+### 2. List Configured Servers
+
+Browse all available MCP servers:
 
 ```bash
 toolscript list-servers
@@ -61,9 +118,9 @@ toolscript list-servers
 
 This shows all servers configured in `.toolscript.json` and their connection status.
 
-### 2. List Tools from a Server
+### 3. List Tools from a Server
 
-Once a server is identified, list its available tools:
+List all tools from a specific server:
 
 ```bash
 toolscript list-tools <server-name>
@@ -71,27 +128,30 @@ toolscript list-tools <server-name>
 
 This displays all tools the server provides with brief descriptions.
 
-### 3. Get TypeScript Types
+### 4. Get TypeScript Types
 
-Before calling a tool, inspect its input/output schema:
+Get TypeScript types for specific tools:
 
 ```bash
-toolscript get-types <server-name> [tool-name]
+toolscript get-types [--filter <filter>]
 ```
 
-**Get all types from a server:**
-```bash
-toolscript get-types octocode
-```
+**Filter format:** Comma-separated list of server names or tool IDs
 
-**Get types for a specific tool:**
 ```bash
-toolscript get-types octocode githubSearchCode
+# All tools from a server
+toolscript get-types --filter octocode
+
+# Specific tool
+toolscript get-types --filter octocode__githubSearchCode
+
+# Multiple filters
+toolscript get-types --filter github,git__commit
 ```
 
 This shows the exact TypeScript interface for the tool's parameters and return value.
 
-### 4. Execute Toolscript
+### 5. Execute Toolscript
 
 After understanding the tool schema, execute it:
 
@@ -184,6 +244,13 @@ This is a diagnostic command - only use when experiencing connection errors duri
 - Verify server command and environment variables are correct
 - Check gateway logs for detailed error messages
 - Ensure required API keys are set in server configuration
+
+**Search not working:**
+- Check gateway is running (search requires active gateway)
+- First search may be slow due to model download (~45MB)
+- If semantic search fails, gateway falls back to fuzzy-only mode
+- Use `--threshold 0.1` to see more results with lower confidence
+- Check search stats: `curl $TOOLSCRIPT_GATEWAY_URL/search/stats`
 
 ## Examples
 

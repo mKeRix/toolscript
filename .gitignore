@@ -20,3 +20,6 @@ Thumbs.db
 coverage/
 coverage.lcov
 junit.xml
+
+# Node modules (for native npm packages)
+node_modules/
