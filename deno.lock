@@ -15,7 +15,7 @@
     "jsr:@std/regexp@^1.0.1": "1.0.1",
     "jsr:@std/text@1": "1.0.16",
     "jsr:@std/text@~1.0.7": "1.0.16",
-    "npm:@huggingface/transformers@^3.7.0": "3.8.0",
+    "npm:@mkerix/transformers@3.8.0-patch.1": "3.8.0-patch.1",
     "npm:@modelcontextprotocol/sdk@1.22.0": "1.22.0_ajv@8.17.1_express@5.1.0_zod@3.25.76",
     "npm:@modelcontextprotocol/sdk@^1.17.4": "1.22.0_ajv@8.17.1_express@5.1.0_zod@3.25.76",
     "npm:@types/node@*": "24.2.0",
@@ -101,17 +101,8 @@
         "tslib"
       ]
     },
-    "@huggingface/jinja@0.5.1": {
-      "integrity": "sha512-yUZLld4lrM9iFxHCwFQ7D1HW2MWMwSbeB7WzWqFYDWK+rEb+WldkLdAJxUPOmgICMHZLzZGVcVjFh3w/YGubng=="
-    },
-    "@huggingface/transformers@3.8.0": {
-      "integrity": "sha512-bEvx9k/fnhjKtekc1pDYLGDhVwxW5mO3k4UkP/mJQtQI5dC34daCQ28O1B19lkyM0QYFwAj+RGl0qOjE9Upt/w==",
-      "dependencies": [
-        "@huggingface/jinja",
-        "onnxruntime-node",
-        "onnxruntime-web",
-        "sharp"
-      ]
+    "@huggingface/jinja@0.5.2": {
+      "integrity": "sha512-3KxqfOSYtHDsq6HglCH4BDHGXXHMS7ZHUHpxVGswa4l8ycCCExDR2E4nDlTo9LCa6bxp03ywf/mAIVEsO1Ov1w=="
     },
     "@img/colour@1.0.0": {
       "integrity": "sha512-A5P/LfWGFSl6nsckYtjw9da+19jB8hkJ6ACTGcDfEJ0aE+l2n2El7dsVM7UVHZQ9s2lmYMWlrS21YLy2IR1LUw=="
@@ -268,14 +259,17 @@
       "os": ["win32"],
       "cpu": ["x64"]
     },
-    "@isaacs/fs-minipass@4.0.1": {
-      "integrity": "sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==",
-      "dependencies": [
-        "minipass"
-      ]
-    },
     "@jsdevtools/ono@7.1.3": {
       "integrity": "sha512-4JQNk+3mVzK3xh2rqd6RB4J46qUR19azEHBneZyTZM+c456qOrbbM/5xcR8huNCCcbVt7+UmizG6GuUvPvKUYg=="
+    },
+    "@mkerix/transformers@3.8.0-patch.1": {
+      "integrity": "sha512-QhEaY78qS9twSVVhKgqKZH9f1Jhldc/FDakaOwJcBKg09mI5Wx0aDU+itb341BfMglo4BdV/6EqgLM0lRVT4vQ==",
+      "dependencies": [
+        "@huggingface/jinja",
+        "onnxruntime-node",
+        "onnxruntime-web",
+        "sharp"
+      ]
     },
     "@modelcontextprotocol/sdk@1.22.0_ajv@8.17.1_express@5.1.0_zod@3.25.76": {
       "integrity": "sha512-VUpl106XVTCpDmTBil2ehgJZjhyLY2QZikzF8NvTXtLRF1CvO5iEE2UNZdVIUer35vFOwMKYeUGbjJtvPWan3g==",
@@ -355,6 +349,9 @@
         "negotiator@1.0.0"
       ]
     },
+    "adm-zip@0.5.16": {
+      "integrity": "sha512-TGw5yVi4saajsSEgz25grObGHEUaDrniwvA2qwSC060KfqGPdglhvPMA2lPIoxs3PQIItj2iag35fONcQqgUaQ=="
+    },
     "ajv-formats@3.0.1_ajv@8.17.1": {
       "integrity": "sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==",
       "dependencies": [
@@ -430,9 +427,6 @@
         "call-bind-apply-helpers",
         "get-intrinsic"
       ]
-    },
-    "chownr@3.0.0": {
-      "integrity": "sha512-+IxzY9BZOQd/XuYPRmrvEVjF/nqj5kgT4kEq7VofrDoM1MxoRjEWkrCC3EtLi59TVawxTAn+orJwFQcrqEN1+g=="
     },
     "content-disposition@0.5.4": {
       "integrity": "sha512-FveZTNuGw04cxlAiWbzi6zTAL/lhehaWbTtgluJh4/E95DqMwTmha3KZN1aAWA8cFIhHzMZUvLevkw5Rqk+tSQ==",
@@ -893,15 +887,6 @@
     "minimist@1.2.8": {
       "integrity": "sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA=="
     },
-    "minipass@7.1.2": {
-      "integrity": "sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw=="
-    },
-    "minizlib@3.1.0": {
-      "integrity": "sha512-KZxYo1BUkWD2TVFLr0MQoM8vUUigWD3LlD83a/75BqC+4qE0Hb1Vo5v1FgcfaNXvfXzr+5EhQ6ing/CaBijTlw==",
-      "dependencies": [
-        "minipass"
-      ]
-    },
     "ms@2.0.0": {
       "integrity": "sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A=="
     },
@@ -935,18 +920,18 @@
         "wrappy"
       ]
     },
-    "onnxruntime-common@1.21.0": {
-      "integrity": "sha512-Q632iLLrtCAVOTO65dh2+mNbQir/QNTVBG3h/QdZBpns7mZ0RYbLRBgGABPbpU9351AgYy7SJf1WaeVwMrBFPQ=="
-    },
     "onnxruntime-common@1.22.0-dev.20250409-89f8206ba4": {
       "integrity": "sha512-vDJMkfCfb0b1A836rgHj+ORuZf4B4+cc2bASQtpeoJLueuFc5DuYwjIZUBrSvx/fO5IrLjLz+oTrB3pcGlhovQ=="
     },
-    "onnxruntime-node@1.21.0": {
-      "integrity": "sha512-NeaCX6WW2L8cRCSqy3bInlo5ojjQqu2fD3D+9W5qb5irwxhEyWKXeH2vZ8W9r6VxaMPUan+4/7NDwZMtouZxEw==",
+    "onnxruntime-common@1.24.0-dev.20251104-75d35474d5": {
+      "integrity": "sha512-m3BU2mSiQwiyR9B1/22xabbQs5z+LYhilktET2fTYOiRCxKdWOnlHGMgixYSXqpMRPQJrYYPFKukXs0OdoxJ5A=="
+    },
+    "onnxruntime-node@1.24.0-dev.20251104-75d35474d5": {
+      "integrity": "sha512-xaz+roHnYE6sXYeNqEaDFD/e1LkbCCtJMZ3b4u5GS5TQx27kpeojdOajqS5LbAipdVC+BHfyu6USh8eHBJBzVQ==",
       "dependencies": [
+        "adm-zip",
         "global-agent",
-        "onnxruntime-common@1.21.0",
-        "tar"
+        "onnxruntime-common@1.24.0-dev.20251104-75d35474d5"
       ],
       "os": ["win32", "darwin", "linux"],
       "scripts": true
@@ -1232,16 +1217,6 @@
     "statuses@2.0.2": {
       "integrity": "sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw=="
     },
-    "tar@7.5.2": {
-      "integrity": "sha512-7NyxrTE4Anh8km8iEy7o0QYPs+0JKBTj5ZaqHg6B39erLg0qYXN3BijtShwbsNSvQ+LN75+KV+C4QR/f6Gwnpg==",
-      "dependencies": [
-        "@isaacs/fs-minipass",
-        "chownr",
-        "minipass",
-        "minizlib",
-        "yallist"
-      ]
-    },
     "tinyglobby@0.2.15_picomatch@4.0.3": {
       "integrity": "sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ==",
       "dependencies": [
@@ -1294,9 +1269,6 @@
     },
     "wrappy@1.0.2": {
       "integrity": "sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ=="
-    },
-    "yallist@5.0.0": {
-      "integrity": "sha512-YgvUTfwqyc7UXVMrB+SImsVYSmTS8X/tSrtdNZMImM+n7+QTriRXyXim0mBrTXNeqzVF0KWGgHPeiyViFFrNDw=="
     },
     "zod-to-json-schema@3.25.0_zod@3.25.76": {
       "integrity": "sha512-HvWtU2UG41LALjajJrML6uQejQhNJx+JBO9IflpSja4R03iNWfKXrj6W2h7ljuLyc1nKS+9yDyL/9tD1U/yBnQ==",
@@ -1387,7 +1359,7 @@
       "jsr:@logtape/logtape@0.8",
       "jsr:@std/assert@1",
       "jsr:@std/text@1",
-      "npm:@huggingface/transformers@^3.7.0",
+      "npm:@mkerix/transformers@3.8.0-patch.1",
       "npm:@modelcontextprotocol/sdk@1.22.0",
       "npm:express@5.1.0",
       "npm:fuse.js@7",
