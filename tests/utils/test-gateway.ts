@@ -175,6 +175,7 @@ export async function startTestGateway(): Promise<TestGatewayInstance> {
       "--allow-run", // Run MCP server processes
       "--allow-sys", // System info
       "--allow-ffi", // FFI for ONNX Runtime (transformers.js)
+      "--allow-scripts=npm:onnxruntime-node,npm:sharp,npm:protobufjs",
       "src/cli/main.ts",
       "gateway",
       "start",
