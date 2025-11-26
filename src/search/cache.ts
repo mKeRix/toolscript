@@ -4,6 +4,7 @@
 
 import { getLogger } from "@logtape/logtape";
 import type { EmbeddingCacheData, EmbeddingCacheEntry, ToolMetadata } from "./types.ts";
+import { getDefaultDataDir } from "../utils/paths.ts";
 
 const logger = getLogger(["toolscript", "search", "cache"]);
 
@@ -57,8 +58,7 @@ export class EmbeddingCache {
     private configHash: string,
     dataDir?: string,
   ) {
-    const home = Deno.env.get("HOME") || Deno.env.get("USERPROFILE") || ".";
-    const baseDir = dataDir || `${home}/.toolscript`;
+    const baseDir = dataDir || getDefaultDataDir();
     this.cacheDir = `${baseDir}/cache/embeddings`;
     this.cacheFile = `${this.cacheDir}/embeddings-${configHash}.json`;
 

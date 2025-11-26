@@ -7,6 +7,7 @@ import { dedent } from "@std/text/unstable-dedent";
 import { emptyConfig, loadConfig } from "../../config/loader.ts";
 import { GatewayServer } from "../../gateway/server.ts";
 import { configureLogger } from "../../utils/logger.ts";
+import { getDefaultDataDir } from "../../utils/paths.ts";
 
 /**
  * Gateway start command
@@ -23,7 +24,9 @@ export const gatewayStartCommand = new Command()
   .option("--search-device <device:device>", "Device for search")
   .option("--search-alpha <value:number>", "Search alpha (semantic vs fuzzy weight)")
   .option("--search-no-cache", "Disable embedding cache")
-  .option("--data-dir <path:string>", "Data directory for cache storage")
+  .option("--data-dir <path:string>", "Data directory for cache storage", {
+    default: getDefaultDataDir(),
+  })
   .env("TOOLSCRIPT_SEARCH_MODEL=<name:string>", "Embedding model", { prefix: "TOOLSCRIPT_" })
   .env("TOOLSCRIPT_SEARCH_DEVICE=<device:device>", "Search device", { prefix: "TOOLSCRIPT_" })
   .env("TOOLSCRIPT_SEARCH_ALPHA=<value:number>", "Search alpha weight", { prefix: "TOOLSCRIPT_" })
@@ -36,12 +39,13 @@ export const gatewayStartCommand = new Command()
     const config = await loadConfig(options.config) || emptyConfig();
 
     // Build search config from CLI options
-    const searchConfig: Record<string, unknown> = {};
+    const searchConfig: Record<string, unknown> = {
+      dataDir: options.dataDir,
+    };
     if (options.searchModel) searchConfig.model = options.searchModel;
     if (options.searchDevice) searchConfig.device = options.searchDevice;
     if (options.searchAlpha !== undefined) searchConfig.alpha = options.searchAlpha;
     if (options.searchNoCache) searchConfig.enableCache = false;
-    if (options.dataDir) searchConfig.dataDir = options.dataDir;
 
     // Start gateway
     const gateway = new GatewayServer();

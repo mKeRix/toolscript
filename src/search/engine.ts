@@ -55,6 +55,7 @@ export class SearchEngine {
       this.semanticEngine = new SemanticEngine(
         this.config.model,
         this.config.device,
+        this.config.dataDir,
       );
       await this.semanticEngine.initialize();
       this.semanticAvailable = true;

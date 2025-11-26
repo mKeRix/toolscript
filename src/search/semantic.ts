@@ -5,6 +5,7 @@
 import { getLogger } from "@logtape/logtape";
 import type { SimilarityResult, ToolMetadata } from "./types.ts";
 import { SUPPORTED_MODELS } from "./types.ts";
+import { getDefaultDataDir } from "../utils/paths.ts";
 
 const logger = getLogger(["toolscript", "search", "semantic"]);
 
@@ -17,11 +18,13 @@ export class SemanticEngine {
   private embeddings: Map<string, Float32Array> = new Map();
   private modelName: string;
   private device: "auto" | "cpu" | "gpu";
+  private dataDir: string;
   private initialized = false;
 
-  constructor(modelName: string, device: "auto" | "cpu" | "gpu" = "auto") {
+  constructor(modelName: string, device: "auto" | "cpu" | "gpu" = "auto", dataDir?: string) {
     this.modelName = modelName;
     this.device = device;
+    this.dataDir = dataDir || getDefaultDataDir();
   }
 
   /**
@@ -44,14 +47,17 @@ export class SemanticEngine {
       const { pipeline } = await import("@huggingface/transformers");
 
       // Let transformers.js handle device selection and fallback automatically
+      const modelCacheDir = `${this.dataDir}/models`;
       this.pipelineInstance = await pipeline(
         "feature-extraction",
         this.modelName,
         {
           dtype: "fp32", // Full precision for better accuracy
           device: this.device, // transformers.js handles platform-specific devices and fallback
+          cache_dir: modelCacheDir, // Store models in toolscript data directory
         },
       );
+      logger.debug`Using model cache directory: ${modelCacheDir}`;
 
       this.initialized = true;
       logger.info`Semantic search engine initialized successfully`;
