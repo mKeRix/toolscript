@@ -30,7 +30,7 @@ jobs:
       - name: Run tests
         env:
           TOOLSCRIPT_SEARCH_DEVICE: cpu
-        run: deno task test:cov --junit-path=./junit.xml
+        run: deno task test:cov --junit-path=./junit.xml && ps -aux
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
