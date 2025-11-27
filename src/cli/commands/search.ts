@@ -5,6 +5,7 @@
 import { Command, EnumType } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { dedent } from "@std/text/unstable-dedent";
+import { toCamelCase } from "../../types/naming.ts";
 
 /**
  * Search result from gateway
@@ -188,7 +189,9 @@ async function outputTypesFormat(
     import { tools } from "toolscript";
 
     // Call the top matching tool
-    const result = await tools.${results[0].tool.serverName}.${results[0].tool.toolName}(params);
+    const result = await tools.${toCamelCase(results[0].tool.serverName)}.${
+    toCamelCase(results[0].tool.toolName)
+  }(params);
     \`\`\`
   `);
 }

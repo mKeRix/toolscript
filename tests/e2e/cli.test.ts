@@ -389,6 +389,55 @@ console.log("sse:", JSON.stringify(reverseResult));
     assertEquals(result.success, true);
     assertStringIncludes(result.stdout.toLowerCase(), "no tools found");
   });
+
+  await t.step("CLI search with types output should use camelCase in example code", async () => {
+    const result = await runCli([
+      "search",
+      "add numbers",
+      "--gateway-url",
+      gateway.url,
+      "--output",
+      "types",
+    ]);
+
+    // Should succeed
+    assertEquals(result.success, true);
+
+    // The server name "stdio-test-server" should be converted to camelCase "stdioTestServer"
+    // in the usage example
+    assertStringIncludes(result.stdout, "tools.stdioTestServer");
+
+    // Should NOT use the raw kebab-case server name in the example
+    assertEquals(
+      result.stdout.includes("tools.stdio-test-server"),
+      false,
+      "Example should use camelCase server names, not kebab-case",
+    );
+  });
+
+  await t.step("CLI get-types should use camelCase in example code", async () => {
+    const result = await runCli([
+      "get-types",
+      "--filter",
+      "stdio-test-server",
+      "--gateway-url",
+      gateway.url,
+    ]);
+
+    // Should succeed
+    assertEquals(result.success, true);
+
+    // The server name "stdio-test-server" should be converted to camelCase "stdioTestServer"
+    // in the usage example
+    assertStringIncludes(result.stdout, "tools.stdioTestServer");
+
+    // Should NOT use the raw kebab-case server name in the example
+    assertEquals(
+      result.stdout.includes("tools.stdio-test-server"),
+      false,
+      "Example should use camelCase server names, not kebab-case",
+    );
+  });
 });
 
 Deno.test("CLI exec should execute inline code without gateway", async () => {

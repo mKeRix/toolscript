@@ -4,6 +4,7 @@
 
 import { Command } from "@cliffy/command";
 import { dedent } from "@std/text/unstable-dedent";
+import { toCamelCase } from "../../types/naming.ts";
 
 /**
  * Get types command
@@ -33,6 +34,7 @@ export const getTypesCommand = new Command()
 
       // Output as markdown code block
       const exampleServer = filter?.split(",")[0]?.split("__")[0] || "serverName";
+      const exampleServerCamel = toCamelCase(exampleServer);
       console.log(dedent`
         \`\`\`typescript
         ${types}
@@ -43,7 +45,7 @@ export const getTypesCommand = new Command()
         import { tools } from "toolscript";
 
         // Call tools using the generated client
-        const result = await tools.${exampleServer}.someMethod(params);
+        const result = await tools.${exampleServerCamel}.someMethod(params);
         \`\`\`
       `);
     } catch (error) {
