@@ -313,4 +313,18 @@ export class SearchEngine {
     }
     logger.info`Search engine cleared`;
   }
+
+  /**
+   * Dispose of resources and cleanup
+   */
+  async dispose(): Promise<void> {
+    if (this.semanticEngine) {
+      await this.semanticEngine.dispose();
+    }
+    if (this.cache) {
+      await this.cache.save();
+    }
+    this.initialized = false;
+    logger.debug`Search engine disposed`;
+  }
 }

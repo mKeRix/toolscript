@@ -268,4 +268,23 @@ export class SemanticEngine {
   getActualDevice(): "webgpu" | "cpu" | null {
     return this.actualDevice;
   }
+
+  /**
+   * Dispose of the pipeline and release resources
+   */
+  async dispose(): Promise<void> {
+    if (this.pipelineInstance) {
+      try {
+        // Try to dispose of the pipeline to release ONNX runtime resources
+        if (typeof this.pipelineInstance.dispose === "function") {
+          await this.pipelineInstance.dispose();
+        }
+        this.pipelineInstance = null;
+        logger.debug`Disposed semantic search pipeline`;
+      } catch (error) {
+        logger.warn`Error disposing pipeline: ${error}`;
+      }
+    }
+    this.initialized = false;
+  }
 }

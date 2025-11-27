@@ -84,6 +84,9 @@ export class GatewayServer {
   async stop(): Promise<void> {
     logger.info("Stopping gateway server");
     await this.aggregator.shutdown();
+    if (this.searchEngine) {
+      await this.searchEngine.dispose();
+    }
     if (this.server) {
       await this.server.shutdown();
       this.server = null;
