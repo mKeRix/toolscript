@@ -250,4 +250,11 @@ export class GatewayServer {
       // Search is optional - gateway continues without it
     }
   }
+
+  /**
+   * Symbol.asyncDispose for explicit resource management (using pattern)
+   */
+  async [Symbol.asyncDispose](): Promise<void> {
+    await this.stop();
+  }
 }

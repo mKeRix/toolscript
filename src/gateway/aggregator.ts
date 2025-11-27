@@ -196,4 +196,11 @@ export class ServerAggregator {
     this.clients.clear();
     this.tools.clear();
   }
+
+  /**
+   * Symbol.asyncDispose for explicit resource management (using pattern)
+   */
+  async [Symbol.asyncDispose](): Promise<void> {
+    await this.shutdown();
+  }
 }

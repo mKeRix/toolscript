@@ -285,6 +285,16 @@ export class SemanticEngine {
         logger.warn`Error disposing pipeline: ${error}`;
       }
     }
+
+    // Clear embeddings to free memory
+    this.embeddings.clear();
     this.initialized = false;
+  }
+
+  /**
+   * Symbol.asyncDispose for explicit resource management (using pattern)
+   */
+  async [Symbol.asyncDispose](): Promise<void> {
+    await this.dispose();
   }
 }

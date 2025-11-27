@@ -107,6 +107,16 @@ Config  Types   Types
 - Setup/teardown in test blocks, not global
 - Avoid test interdependencies
 
+#### Special Testing Requirements
+
+**Transformers.js / ONNX Runtime**
+- Any code using transformers.js (semantic search) must be tested via E2E tests, not unit tests
+- ONNX Runtime creates worker threads and file handles that don't properly close, causing resource leaks
+- Unit tests with Deno's resource sanitizers will fail due to these leaks
+- E2E tests isolate the issue by running the gateway (with transformers.js) in a separate process
+- Example: `SearchEngine` is tested through E2E gateway tests in `tests/e2e/cli.test.ts`
+- This is a known limitation of the underlying ONNX Runtime library, not a bug in our code
+
 ### Git Workflow
 
 #### Branching Strategy

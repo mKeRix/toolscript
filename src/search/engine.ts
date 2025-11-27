@@ -327,4 +327,11 @@ export class SearchEngine {
     this.initialized = false;
     logger.debug`Search engine disposed`;
   }
+
+  /**
+   * Symbol.asyncDispose for explicit resource management (using pattern)
+   */
+  async [Symbol.asyncDispose](): Promise<void> {
+    await this.dispose();
+  }
 }
