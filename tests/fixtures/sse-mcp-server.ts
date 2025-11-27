@@ -140,4 +140,18 @@ app.post("/message", async (req, res) => {
 });
 
 console.log(`SSE MCP server starting on http://localhost:${port}`);
-app.listen(port, "localhost");
+
+// Store server reference for clean shutdown
+const server = app.listen(port, "localhost");
+
+// Handle shutdown signals
+const shutdown = () => {
+  console.log("SSE MCP server shutting down...");
+  server.close(() => {
+    console.log("SSE MCP server closed");
+    Deno.exit(0);
+  });
+};
+
+Deno.addSignalListener("SIGTERM", shutdown);
+Deno.addSignalListener("SIGINT", shutdown);

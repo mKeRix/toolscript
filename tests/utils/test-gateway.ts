@@ -284,10 +284,13 @@ export async function startTestGateway(): Promise<TestGatewayInstance> {
 
   // Cleanup function
   const cleanup = async () => {
+    console.log("[Test Gateway] Starting cleanup...");
+
     // Cancel stream readers before killing process
     if (stdoutReader) {
       try {
         await stdoutReader.cancel();
+        console.log("[Test Gateway] Cancelled stdout reader");
       } catch {
         // Already cancelled or closed
       }
@@ -295,17 +298,30 @@ export async function startTestGateway(): Promise<TestGatewayInstance> {
     if (stderrReader) {
       try {
         await stderrReader.cancel();
+        console.log("[Test Gateway] Cancelled stderr reader");
       } catch {
         // Already cancelled or closed
       }
     }
 
     try {
+      console.log("[Test Gateway] Killing gateway process...");
       process.kill("SIGTERM");
-      // Wait for process to exit
-      await process.status;
-    } catch {
-      // Process might have already exited
+      // Wait for process to exit with timeout
+      const statusPromise = process.status;
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Gateway shutdown timeout")), 5000)
+      );
+      await Promise.race([statusPromise, timeoutPromise]);
+      console.log("[Test Gateway] Gateway process exited");
+    } catch (error) {
+      console.log(`[Test Gateway] Gateway process exit error: ${error}`);
+      // Force kill if SIGTERM didn't work
+      try {
+        process.kill("SIGKILL");
+      } catch {
+        // Already dead
+      }
     }
 
     // Clean up HTTP server
@@ -318,10 +334,21 @@ export async function startTestGateway(): Promise<TestGatewayInstance> {
         // Already closed
       }
       try {
+        console.log("[Test Gateway] Killing HTTP server...");
         httpServerProcess.kill("SIGTERM");
-        await httpServerProcess.status;
-      } catch {
-        // Process might have already exited
+        const statusPromise = httpServerProcess.status;
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("HTTP server shutdown timeout")), 2000)
+        );
+        await Promise.race([statusPromise, timeoutPromise]);
+        console.log("[Test Gateway] HTTP server exited");
+      } catch (error) {
+        console.log(`[Test Gateway] HTTP server exit error: ${error}`);
+        try {
+          httpServerProcess.kill("SIGKILL");
+        } catch {
+          // Already dead
+        }
       }
     }
 
@@ -335,19 +362,33 @@ export async function startTestGateway(): Promise<TestGatewayInstance> {
         // Already closed
       }
       try {
+        console.log("[Test Gateway] Killing SSE server...");
         sseServerProcess.kill("SIGTERM");
-        await sseServerProcess.status;
-      } catch {
-        // Process might have already exited
+        const statusPromise = sseServerProcess.status;
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("SSE server shutdown timeout")), 2000)
+        );
+        await Promise.race([statusPromise, timeoutPromise]);
+        console.log("[Test Gateway] SSE server exited");
+      } catch (error) {
+        console.log(`[Test Gateway] SSE server exit error: ${error}`);
+        try {
+          sseServerProcess.kill("SIGKILL");
+        } catch {
+          // Already dead
+        }
       }
     }
 
     // Clean up temp config file
     try {
       await Deno.remove(tempConfigFile);
+      console.log("[Test Gateway] Removed temp config file");
     } catch {
       // File might already be deleted
     }
+
+    console.log("[Test Gateway] Cleanup complete");
   };
 
   return {
