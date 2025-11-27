@@ -62,7 +62,7 @@ export const listToolsCommand = new Command()
     const gatewayUrl = options.gatewayUrl;
 
     try {
-      const response = await fetch(`${gatewayUrl}/tools?server=${server}`);
+      const response = await fetch(`${gatewayUrl}/tools?filter=${encodeURIComponent(server)}`);
       if (!response.ok) {
         console.error(`Failed to fetch tools: ${response.statusText}`);
         Deno.exit(1);

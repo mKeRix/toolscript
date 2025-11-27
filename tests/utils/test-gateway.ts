@@ -167,12 +167,14 @@ export async function startTestGateway(): Promise<TestGatewayInstance> {
   const cmd = new Deno.Command("deno", {
     args: [
       "run",
-      "--allow-net",
-      "--allow-read",
-      "--allow-write",
-      "--allow-env",
-      "--allow-run",
-      "--allow-sys",
+      "--unstable-webgpu", // WebGPU support for transformers.js
+      "--allow-net", // Network access for MCP servers and model download
+      "--allow-read", // Read config files and model cache
+      "--allow-write", // Write model cache and temp files
+      "--allow-env", // Environment variables
+      "--allow-run", // Run MCP server processes
+      "--allow-sys", // System info
+      "--allow-ffi", // FFI for ONNX Runtime (transformers.js)
       "src/cli/main.ts",
       "gateway",
       "start",
@@ -191,7 +193,6 @@ export async function startTestGateway(): Promise<TestGatewayInstance> {
 
   // Wait for the gateway to be ready by polling the health endpoint
   const url = `http://${hostname}:${port}`;
-  const maxAttempts = 50;
   let ready = false;
 
   // Start reading stdout/stderr in the background to prevent blocking
@@ -241,23 +242,25 @@ export async function startTestGateway(): Promise<TestGatewayInstance> {
     }
   })();
 
-  for (let i = 0; i < maxAttempts; i++) {
+  // Wait for gateway and search engine to be ready (longer timeout for model download on first run)
+  const healthMaxAttempts = 100;
+  for (let i = 0; i < healthMaxAttempts; i++) {
     try {
       const response = await fetch(`${url}/health`, {
-        signal: AbortSignal.timeout(1000),
+        signal: AbortSignal.timeout(2000),
       });
       if (response.ok) {
-        // Consume the response body to prevent resource leak
-        await response.text();
-        ready = true;
-        break;
+        const health = await response.json();
+        // Check if both gateway and search are ready
+        if (health.status === "ok" && health.search?.ready) {
+          ready = true;
+          break;
+        }
       }
-      // Consume response body even on non-ok response
-      await response.text();
     } catch {
       // Gateway not ready yet, wait and retry
-      await new Promise((resolve) => setTimeout(resolve, 200));
     }
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
   if (!ready) {

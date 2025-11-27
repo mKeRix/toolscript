@@ -2,15 +2,16 @@
   "name": "@toolscript/cli",
   "version": "0.1.0",
   "exports": "./src/cli/main.ts",
+  "nodeModulesDir": "auto",
   "tasks": {
-    "dev": "deno run --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys src/cli/main.ts",
-    "cli": "deno run --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys src/cli/main.ts",
-    "test": "deno test --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys",
-    "test:cov": "deno test --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys --coverage=coverage/",
+    "dev": "deno run --unstable-webgpu --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys --allow-ffi src/cli/main.ts",
+    "cli": "deno run --unstable-webgpu --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys --allow-ffi src/cli/main.ts",
+    "test": "deno test --unstable-webgpu --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys --allow-ffi",
+    "test:cov": "deno test --unstable-webgpu --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys --allow-ffi --coverage=coverage/",
     "fmt": "deno fmt",
     "fmt:check": "deno fmt --check",
     "lint": "deno lint",
-    "compile": "deno compile --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys --output ./dist/toolscript src/cli/main.ts"
+    "compile": "deno compile --unstable-webgpu --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys --allow-ffi --output ./dist/toolscript src/cli/main.ts"
   },
   "compilerOptions": {
     "strict": true,
@@ -53,6 +54,8 @@
     "@hono/mcp": "jsr:@hono/mcp@0.1.4",
     "express": "npm:express@5.1.0",
     "@std/assert": "jsr:@std/assert@^1.0.0",
-    "@std/text": "jsr:@std/text@^1.0.0"
+    "@std/text": "jsr:@std/text@^1.0.0",
+    "@huggingface/transformers": "npm:@mkerix/transformers@3.8.0-patch.3",
+    "fuse.js": "npm:fuse.js@^7.0.0"
   }
 }

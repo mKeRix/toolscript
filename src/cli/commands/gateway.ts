@@ -2,27 +2,51 @@
  * Gateway management commands.
  */
 
-import { Command } from "@cliffy/command";
+import { Command, EnumType } from "@cliffy/command";
 import { dedent } from "@std/text/unstable-dedent";
 import { emptyConfig, loadConfig } from "../../config/loader.ts";
 import { GatewayServer } from "../../gateway/server.ts";
 import { configureLogger } from "../../utils/logger.ts";
+import { getDefaultDataDir } from "../../utils/paths.ts";
+import type { SearchConfig } from "../../search/mod.ts";
 
 /**
  * Gateway start command
  */
 export const gatewayStartCommand = new Command()
   .description("Start the MCP gateway server")
+  .type("device", new EnumType(["auto", "webgpu", "cpu"]))
   .option("-p, --port <port:number>", "Port to listen on (default: random)", { default: 0 })
   .option("-H, --hostname <hostname:string>", "Hostname to bind to", { default: "localhost" })
   .option("-c, --config <path:string>", "Path to config file", {
     default: "./.toolscript.json",
   })
+  .option("--search-model <name:string>", "Embedding model for search")
+  .option("--search-device <device:device>", "Device for search")
+  .option("--search-alpha <value:number>", "Search alpha (semantic vs fuzzy weight)")
+  .option("--search-no-cache", "Disable embedding cache")
+  .option("--data-dir <path:string>", "Data directory for cache storage", {
+    default: getDefaultDataDir(),
+  })
+  .env("TOOLSCRIPT_SEARCH_MODEL=<name:string>", "Embedding model", { prefix: "TOOLSCRIPT_" })
+  .env("TOOLSCRIPT_SEARCH_DEVICE=<device:device>", "Search device", { prefix: "TOOLSCRIPT_" })
+  .env("TOOLSCRIPT_SEARCH_ALPHA=<value:number>", "Search alpha weight", { prefix: "TOOLSCRIPT_" })
+  .env("TOOLSCRIPT_SEARCH_NO_CACHE=<flag:boolean>", "Disable cache", { prefix: "TOOLSCRIPT_" })
+  .env("TOOLSCRIPT_DATA_DIR=<path:string>", "Data directory", { prefix: "TOOLSCRIPT_" })
   .action(async (options) => {
     configureLogger("info");
 
     // Load configuration (or use empty config if file doesn't exist)
     const config = await loadConfig(options.config) || emptyConfig();
+
+    // Build search config from CLI options
+    const searchConfig: Partial<SearchConfig> = {
+      dataDir: options.dataDir,
+    };
+    if (options.searchModel) searchConfig.model = options.searchModel;
+    if (options.searchDevice) searchConfig.device = options.searchDevice;
+    if (options.searchAlpha !== undefined) searchConfig.alpha = options.searchAlpha;
+    if (options.searchNoCache) searchConfig.enableCache = false;
 
     // Start gateway
     const gateway = new GatewayServer();
@@ -40,6 +64,7 @@ export const gatewayStartCommand = new Command()
     await gateway.start(config, {
       port: options.port,
       hostname: options.hostname,
+      searchConfig,
     });
   });
 

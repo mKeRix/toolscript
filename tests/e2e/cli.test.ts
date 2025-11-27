@@ -76,6 +76,7 @@ Deno.test("Gateway integration tests", async (t) => {
   await t.step("CLI get-types should work with running gateway", async () => {
     const result = await runCli([
       "get-types",
+      "--filter",
       "stdio-test-server",
       "--gateway-url",
       gateway.url,
@@ -287,6 +288,153 @@ console.log("sse:", JSON.stringify(reverseResult));
     assertEquals(result.success, false);
     // Should indicate missing required argument, not connection error
     assertStringIncludes(result.stderr.toLowerCase() + result.stdout.toLowerCase(), "server");
+  });
+
+  await t.step("CLI search should find tools with exact keyword match", async () => {
+    const result = await runCli([
+      "search",
+      "echo",
+      "--gateway-url",
+      gateway.url,
+      "--limit",
+      "1",
+    ]);
+
+    // Should succeed and return matching tools
+    assertEquals(result.success, true);
+    // Should find the echo tool with exact keyword match
+    assertStringIncludes(result.stdout.toLowerCase(), "echo");
+  });
+
+  await t.step("CLI search should find tools with fuzzy match", async () => {
+    const result = await runCli([
+      "search",
+      "greet someone",
+      "--gateway-url",
+      gateway.url,
+      "--limit",
+      "1",
+    ]);
+
+    // Should succeed and return matching tools
+    assertEquals(result.success, true);
+    // Should find greet tool through fuzzy/semantic matching
+    assertStringIncludes(result.stdout.toLowerCase(), "greet");
+  });
+
+  await t.step("CLI search should find tools with semantic match", async () => {
+    const result = await runCli([
+      "search",
+      "flip text backwards",
+      "--gateway-url",
+      gateway.url,
+      "--limit",
+      "1",
+    ]);
+
+    // Should succeed and return matching tools using semantic understanding
+    assertEquals(result.success, true);
+    // Should find reverse tool based on semantic meaning (query uses "flip backwards", not "reverse")
+    assertStringIncludes(result.stdout.toLowerCase(), "reverse");
+  });
+
+  await t.step("CLI search stats endpoint should return search statistics", async () => {
+    // Fetch search stats from gateway
+    const response = await fetch(`${gateway.url}/search/stats`);
+
+    assertEquals(response.ok, true);
+    const stats = await response.json();
+
+    // Verify stats structure
+    assertEquals(typeof stats.toolsIndexed, "number");
+    assertEquals(typeof stats.semanticAvailable, "boolean");
+    assertEquals(typeof stats.model, "string");
+    assertEquals(typeof stats.cacheHitRate, "number");
+    assertEquals(stats.toolsIndexed > 0, true, "Should have indexed some tools");
+    assertEquals(stats.semanticAvailable, true, "Semantic search must be available");
+    assertEquals(stats.model.length > 0, true, "Should have a model name");
+  });
+
+  await t.step("CLI search should support types output format", async () => {
+    const result = await runCli([
+      "search",
+      "add",
+      "--gateway-url",
+      gateway.url,
+      "--output",
+      "types",
+    ]);
+
+    // Should succeed and return TypeScript types
+    assertEquals(result.success, true);
+    // Should include confidence table
+    assertStringIncludes(result.stdout, "Confidence");
+    // Should include TypeScript code
+    assertStringIncludes(result.stdout, "```typescript");
+    // Should find the add tool
+    assertStringIncludes(result.stdout.toLowerCase(), "add");
+  });
+
+  await t.step("CLI search should handle no results gracefully", async () => {
+    const result = await runCli([
+      "search",
+      "nonexistent_tool_xyz_12345_quantum_flux_capacitor",
+      "--gateway-url",
+      gateway.url,
+    ]);
+
+    // Should succeed but indicate no results
+    assertEquals(result.success, true);
+    assertStringIncludes(result.stdout.toLowerCase(), "no tools found");
+  });
+
+  await t.step("CLI search with types output should use camelCase in example code", async () => {
+    const result = await runCli([
+      "search",
+      "add numbers",
+      "--gateway-url",
+      gateway.url,
+      "--output",
+      "types",
+    ]);
+
+    // Should succeed
+    assertEquals(result.success, true);
+
+    // The server name "stdio-test-server" should be converted to camelCase "stdioTestServer"
+    // in the usage example
+    assertStringIncludes(result.stdout, "tools.stdioTestServer");
+
+    // Should NOT use the raw kebab-case server name in the example
+    assertEquals(
+      result.stdout.includes("tools.stdio-test-server"),
+      false,
+      "Example should use camelCase server names, not kebab-case",
+    );
+  });
+
+  await t.step("CLI get-types should use camelCase in example code", async () => {
+    const result = await runCli([
+      "get-types",
+      "--filter",
+      "stdio-test-server",
+      "--gateway-url",
+      gateway.url,
+    ]);
+
+    // Should succeed
+    assertEquals(result.success, true);
+
+    // The server name "stdio-test-server" should be converted to camelCase "stdioTestServer"
+    // in the usage example
+    assertStringIncludes(result.stdout, "tools.stdioTestServer");
+
+    // Should NOT use the raw kebab-case server name in the example
+    assertEquals(
+      result.stdout.includes("tools.stdio-test-server"),
+      false,
+      "Example should use camelCase server names, not kebab-case",
+    );
   });
 });
 

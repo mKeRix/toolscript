@@ -123,18 +123,49 @@ export class ServerAggregator {
   }
 
   /**
-   * Get tools filtered by server and/or tool name
+   * Get tools by filter string.
+   *
+   * Filter format: comma-separated identifiers
+   * - "servername" - all tools from a server
+   * - "servername__toolname" - specific tool
+   * - "server1,server2__tool" - multiple filters
+   *
+   * @param filter Comma-separated filter string
+   * @returns Matching tools
    */
-  getFilteredTools(serverFilter?: string, toolFilter?: string): ToolInfo[] {
-    return this.getAllTools().filter((tool) => {
-      if (serverFilter && tool.serverName !== serverFilter) {
-        return false;
+  getToolsByFilter(filter: string): ToolInfo[] {
+    if (!filter || filter.trim() === "") {
+      return this.getAllTools();
+    }
+
+    const filters = filter.split(",").map((f) => f.trim()).filter(Boolean);
+    const matchedTools = new Set<ToolInfo>();
+
+    for (const f of filters) {
+      if (f.includes("__")) {
+        // Specific tool: server__toolname
+        const tool = this.tools.get(f);
+        if (tool) {
+          matchedTools.add(tool);
+        }
+      } else {
+        // Server name: all tools from this server
+        for (const tool of this.tools.values()) {
+          if (tool.serverName === f) {
+            matchedTools.add(tool);
+          }
+        }
       }
-      if (toolFilter && tool.toolName !== toolFilter) {
-        return false;
-      }
-      return true;
-    });
+    }
+
+    return Array.from(matchedTools);
+  }
+
+  /**
+   * Get a single tool by qualified name
+   */
+  getTool(qualifiedName: string): ToolInfo | undefined {
+    return this.tools.get(qualifiedName);
   }
 
   /**
@@ -164,5 +195,12 @@ export class ServerAggregator {
     }
     this.clients.clear();
     this.tools.clear();
+  }
+
+  /**
+   * Symbol.asyncDispose for explicit resource management (using pattern)
+   */
+  async [Symbol.asyncDispose](): Promise<void> {
+    await this.shutdown();
   }
 }

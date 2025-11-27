@@ -16,9 +16,16 @@ The CLI is built with Cliffy and provides commands for:
 
 - Gateway management (`gateway start`, `gateway status`)
 - Discovery (`list-servers`, `list-tools`, `get-types`)
+- Search (`search`)
 - Execution (`exec`)
 
 Entry point: `src/cli/main.ts`
+
+Command modules:
+- `src/cli/commands/gateway.ts`: Gateway management
+- `src/cli/commands/types.ts`: Type generation
+- `src/cli/commands/search.ts`: Tool search
+- `src/cli/commands/exec.ts`: Code execution
 
 ### Gateway Server
 
@@ -29,12 +36,47 @@ The gateway server is an HTTP server that:
 3. Generates TypeScript client code from tool schemas
 4. Serves client code via `/runtime/tools.ts` endpoint
 5. Proxies tool calls to appropriate MCP servers
+6. Provides semantic + fuzzy search over available tools
+7. Exposes health endpoint with search readiness status
 
 Key modules:
 
 - `src/gateway/server.ts`: HTTP server implementation
 - `src/gateway/aggregator.ts`: Multi-server aggregation logic
 - `src/gateway/mcp-client.ts`: MCP client wrapper
+
+### Search Engine
+
+The search engine provides hybrid tool discovery:
+
+1. **Semantic Search**: Vector embeddings using transformer models (transformers.js)
+   - Default model: `Xenova/bge-small-en-v1.5`
+   - Alternative: `Xenova/all-MiniLM-L6-v2`
+   - Device support: CPU (all platforms), WebGPU
+   - Understands natural language queries
+
+2. **Fuzzy Search**: Keyword-based matching with typo tolerance
+   - Fast prefix/substring matching
+   - Handles typos and partial matches
+   - No model download required
+
+3. **Hybrid Fusion**: Combines semantic + fuzzy scores
+   - Alpha weighting (default: 0.7 semantic, 0.3 fuzzy)
+   - Configurable via `--search-alpha` flag
+   - Threshold filtering (default: 0.35)
+
+4. **Embedding Cache**: Disk-based cache for faster restarts
+   - Stores embeddings by tool content hash
+   - Automatically invalidates on tool changes
+   - Optional disable via `--search-no-cache`
+
+Key modules:
+
+- `src/search/engine.ts`: Main search orchestrator
+- `src/search/semantic.ts`: Semantic search with embeddings
+- `src/search/fuzzy.ts`: Keyword-based fuzzy matching
+- `src/search/cache.ts`: Embedding persistence
+- `src/search/types.ts`: Search configuration and model definitions
 
 ### Type Generation
 
@@ -74,6 +116,40 @@ The plugin provides:
 Plugin directory: `plugins/toolscript/`
 
 ## Data Flow
+
+### Tool Search Flow
+
+```
+1. User: toolscript search "find files"
+2. CLI: Send search request to gateway
+3. Gateway: Semantic engine generates query embedding
+4. Gateway: Check cache for tool embeddings
+5. Gateway: For uncached tools, generate embeddings
+6. Gateway: Compute cosine similarity between query and tools
+7. Gateway: Fuzzy engine performs keyword matching
+8. Gateway: Combine semantic + fuzzy scores with alpha weighting
+9. Gateway: Filter by threshold, sort by score
+10. CLI: Display results as table or TypeScript types
+```
+
+### Search Engine Initialization Flow
+
+```
+1. Gateway starts with search configuration
+2. Compute config hash from server names + model
+3. Initialize embedding cache with config hash
+4. Load cached embeddings from disk (if available)
+5. Initialize semantic engine:
+   a. Download embedding model (first run only)
+   b. Load model into memory
+   c. Configure device (CPU/WebGPU)
+6. Initialize fuzzy engine (lightweight, no download)
+7. Index all tools from connected MCP servers:
+   a. Generate embeddings for new/changed tools
+   b. Cache embeddings to disk
+   c. Load embeddings into search engine
+8. Gateway marks search as ready in /health endpoint
+```
 
 ### Toolscript Execution Flow
 
@@ -189,10 +265,16 @@ deno run \
 
 ## Extension Points
 
+Implemented features:
+
+1. ✅ **Semantic Tool Search**: AI-powered search with embeddings + fuzzy matching
+2. ✅ **HTTP/SSE Server Support**: Full support for stdio, HTTP, and SSE transports
+3. ✅ **Embedding Cache**: Disk-based persistence for faster restarts
+
 Future enhancements:
 
-1. **HTTP/SSE Server Support**: Add HTTP and SSE transport implementations
-2. **Persistent Type Cache**: Add file-based cache option for faster restarts
-3. **Watch Mode**: Auto-regenerate types when servers change
-4. **Tool Versioning**: Track and handle tool schema version changes
-5. **Metrics/Telemetry**: Add optional metrics collection
+1. **Watch Mode**: Auto-regenerate types when servers change
+2. **Tool Versioning**: Track and handle tool schema version changes
+3. **Metrics/Telemetry**: Add optional metrics collection
+4. **Alternative Embedding Models**: Support for local models, OpenAI, etc.
+5. **Search Relevance Feedback**: Learn from user selections to improve ranking

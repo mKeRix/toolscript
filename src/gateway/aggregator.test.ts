@@ -35,7 +35,7 @@ Deno.test("ServerAggregator should get all tools from single server", () => {
   assertEquals(aggregator.getServerNames(), []);
 });
 
-Deno.test("ServerAggregator getFilteredTools should filter by server name", () => {
+Deno.test("ServerAggregator getToolsByFilter should filter by server name", () => {
   const aggregator = new ServerAggregator();
 
   // Create mock tools
@@ -69,16 +69,16 @@ Deno.test("ServerAggregator getFilteredTools should filter by server name", () =
     aggregator["tools"].set(tool.qualifiedName, tool);
   }
 
-  const githubTools = aggregator.getFilteredTools("github");
+  const githubTools = aggregator.getToolsByFilter("github");
   assertEquals(githubTools.length, 2);
   assertEquals(githubTools.every((t) => t.serverName === "github"), true);
 
-  const atlassianTools = aggregator.getFilteredTools("atlassian");
+  const atlassianTools = aggregator.getToolsByFilter("atlassian");
   assertEquals(atlassianTools.length, 1);
   assertEquals(atlassianTools[0].serverName, "atlassian");
 });
 
-Deno.test("ServerAggregator getFilteredTools should filter by tool name", () => {
+Deno.test("ServerAggregator getToolsByFilter should filter by qualified tool name", () => {
   const aggregator = new ServerAggregator();
 
   const tools: ToolInfo[] = [
@@ -110,12 +110,14 @@ Deno.test("ServerAggregator getFilteredTools should filter by tool name", () => 
     aggregator["tools"].set(tool.qualifiedName, tool);
   }
 
-  const createIssueTools = aggregator.getFilteredTools(undefined, "create_issue");
+  const createIssueTools = aggregator.getToolsByFilter(
+    "github__create_issue,atlassian__create_issue",
+  );
   assertEquals(createIssueTools.length, 2);
   assertEquals(createIssueTools.every((t) => t.toolName === "create_issue"), true);
 });
 
-Deno.test("ServerAggregator getFilteredTools should filter by both server and tool name", () => {
+Deno.test("ServerAggregator getToolsByFilter should filter by specific qualified name", () => {
   const aggregator = new ServerAggregator();
 
   const tools: ToolInfo[] = [
@@ -147,13 +149,13 @@ Deno.test("ServerAggregator getFilteredTools should filter by both server and to
     aggregator["tools"].set(tool.qualifiedName, tool);
   }
 
-  const filtered = aggregator.getFilteredTools("github", "create_issue");
+  const filtered = aggregator.getToolsByFilter("github__create_issue");
   assertEquals(filtered.length, 1);
   assertEquals(filtered[0].serverName, "github");
   assertEquals(filtered[0].toolName, "create_issue");
 });
 
-Deno.test("ServerAggregator getFilteredTools should return all tools when no filters", () => {
+Deno.test("ServerAggregator getToolsByFilter should return all tools when empty filter", () => {
   const aggregator = new ServerAggregator();
 
   const tools: ToolInfo[] = [
@@ -178,7 +180,7 @@ Deno.test("ServerAggregator getFilteredTools should return all tools when no fil
     aggregator["tools"].set(tool.qualifiedName, tool);
   }
 
-  const allTools = aggregator.getFilteredTools();
+  const allTools = aggregator.getToolsByFilter("");
   assertEquals(allTools.length, 2);
 });
 
@@ -309,4 +311,221 @@ Deno.test("ServerAggregator getServerNames should return list of server names", 
 
   // Test with empty aggregator
   assertEquals(aggregator.getServerNames(), []);
+});
+
+// Tests for new getToolsByFilter method
+
+Deno.test("ServerAggregator getToolsByFilter should return all tools when filter is empty", () => {
+  const aggregator = new ServerAggregator();
+
+  const tools: ToolInfo[] = [
+    {
+      serverName: "github",
+      toolName: "create_issue",
+      qualifiedName: "github__create_issue",
+      inputSchema: {},
+    },
+    {
+      serverName: "atlassian",
+      toolName: "get_issue",
+      qualifiedName: "atlassian__get_issue",
+      inputSchema: {},
+    },
+  ];
+
+  // @ts-ignore - accessing private field for testing
+  for (const tool of tools) {
+    aggregator["tools"].set(tool.qualifiedName, tool);
+  }
+
+  assertEquals(aggregator.getToolsByFilter("").length, 2);
+  assertEquals(aggregator.getToolsByFilter("  ").length, 2);
+});
+
+Deno.test("ServerAggregator getToolsByFilter should filter by server name", () => {
+  const aggregator = new ServerAggregator();
+
+  const tools: ToolInfo[] = [
+    {
+      serverName: "github",
+      toolName: "create_issue",
+      qualifiedName: "github__create_issue",
+      inputSchema: {},
+    },
+    {
+      serverName: "github",
+      toolName: "list_repos",
+      qualifiedName: "github__list_repos",
+      inputSchema: {},
+    },
+    {
+      serverName: "atlassian",
+      toolName: "get_issue",
+      qualifiedName: "atlassian__get_issue",
+      inputSchema: {},
+    },
+  ];
+
+  // @ts-ignore - accessing private field for testing
+  for (const tool of tools) {
+    aggregator["tools"].set(tool.qualifiedName, tool);
+  }
+
+  const filtered = aggregator.getToolsByFilter("github");
+  assertEquals(filtered.length, 2);
+  assertEquals(filtered.every((t) => t.serverName === "github"), true);
+});
+
+Deno.test("ServerAggregator getToolsByFilter should filter by qualified tool name", () => {
+  const aggregator = new ServerAggregator();
+
+  const tools: ToolInfo[] = [
+    {
+      serverName: "github",
+      toolName: "create_issue",
+      qualifiedName: "github__create_issue",
+      inputSchema: {},
+    },
+    {
+      serverName: "github",
+      toolName: "list_repos",
+      qualifiedName: "github__list_repos",
+      inputSchema: {},
+    },
+    {
+      serverName: "atlassian",
+      toolName: "get_issue",
+      qualifiedName: "atlassian__get_issue",
+      inputSchema: {},
+    },
+  ];
+
+  // @ts-ignore - accessing private field for testing
+  for (const tool of tools) {
+    aggregator["tools"].set(tool.qualifiedName, tool);
+  }
+
+  const filtered = aggregator.getToolsByFilter("github__create_issue");
+  assertEquals(filtered.length, 1);
+  assertEquals(filtered[0].qualifiedName, "github__create_issue");
+});
+
+Deno.test("ServerAggregator getToolsByFilter should handle comma-separated filters", () => {
+  const aggregator = new ServerAggregator();
+
+  const tools: ToolInfo[] = [
+    {
+      serverName: "github",
+      toolName: "create_issue",
+      qualifiedName: "github__create_issue",
+      inputSchema: {},
+    },
+    {
+      serverName: "github",
+      toolName: "list_repos",
+      qualifiedName: "github__list_repos",
+      inputSchema: {},
+    },
+    {
+      serverName: "atlassian",
+      toolName: "get_issue",
+      qualifiedName: "atlassian__get_issue",
+      inputSchema: {},
+    },
+    {
+      serverName: "slack",
+      toolName: "send_message",
+      qualifiedName: "slack__send_message",
+      inputSchema: {},
+    },
+  ];
+
+  // @ts-ignore - accessing private field for testing
+  for (const tool of tools) {
+    aggregator["tools"].set(tool.qualifiedName, tool);
+  }
+
+  // Mix of server name and qualified tool name
+  const filtered = aggregator.getToolsByFilter("atlassian,github__create_issue");
+  assertEquals(filtered.length, 2);
+  assertEquals(filtered.some((t) => t.qualifiedName === "atlassian__get_issue"), true);
+  assertEquals(filtered.some((t) => t.qualifiedName === "github__create_issue"), true);
+});
+
+Deno.test("ServerAggregator getToolsByFilter should handle multiple server names", () => {
+  const aggregator = new ServerAggregator();
+
+  const tools: ToolInfo[] = [
+    {
+      serverName: "github",
+      toolName: "create_issue",
+      qualifiedName: "github__create_issue",
+      inputSchema: {},
+    },
+    {
+      serverName: "atlassian",
+      toolName: "get_issue",
+      qualifiedName: "atlassian__get_issue",
+      inputSchema: {},
+    },
+    {
+      serverName: "slack",
+      toolName: "send_message",
+      qualifiedName: "slack__send_message",
+      inputSchema: {},
+    },
+  ];
+
+  // @ts-ignore - accessing private field for testing
+  for (const tool of tools) {
+    aggregator["tools"].set(tool.qualifiedName, tool);
+  }
+
+  const filtered = aggregator.getToolsByFilter("github,atlassian");
+  assertEquals(filtered.length, 2);
+  assertEquals(filtered.some((t) => t.serverName === "github"), true);
+  assertEquals(filtered.some((t) => t.serverName === "atlassian"), true);
+  assertEquals(filtered.every((t) => t.serverName !== "slack"), true);
+});
+
+Deno.test("ServerAggregator getToolsByFilter should ignore nonexistent filters", () => {
+  const aggregator = new ServerAggregator();
+
+  const tools: ToolInfo[] = [
+    {
+      serverName: "github",
+      toolName: "create_issue",
+      qualifiedName: "github__create_issue",
+      inputSchema: {},
+    },
+  ];
+
+  // @ts-ignore - accessing private field for testing
+  for (const tool of tools) {
+    aggregator["tools"].set(tool.qualifiedName, tool);
+  }
+
+  const filtered = aggregator.getToolsByFilter("nonexistent,github__create_issue");
+  assertEquals(filtered.length, 1);
+  assertEquals(filtered[0].qualifiedName, "github__create_issue");
+});
+
+Deno.test("ServerAggregator getTool should return tool by qualified name", () => {
+  const aggregator = new ServerAggregator();
+
+  const tool: ToolInfo = {
+    serverName: "github",
+    toolName: "create_issue",
+    qualifiedName: "github__create_issue",
+    inputSchema: {},
+  };
+
+  // @ts-ignore - accessing private field for testing
+  aggregator["tools"].set(tool.qualifiedName, tool);
+
+  const found = aggregator.getTool("github__create_issue");
+  assertEquals(found?.qualifiedName, "github__create_issue");
+
+  const notFound = aggregator.getTool("nonexistent__tool");
+  assertEquals(notFound, undefined);
 });

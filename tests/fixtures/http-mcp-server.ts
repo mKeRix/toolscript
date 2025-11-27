@@ -74,4 +74,16 @@ await mcpServer.connect(transport);
 app.all("/", (c) => transport.handleRequest(c));
 
 console.log(`HTTP MCP server starting on http://localhost:${port}`);
-Deno.serve({ port, hostname: "localhost" }, app.fetch);
+
+// Store server reference for clean shutdown
+const server = Deno.serve({ port, hostname: "localhost" }, app.fetch);
+
+// Handle shutdown signals
+const shutdown = async () => {
+  console.log("HTTP MCP server shutting down...");
+  await server.shutdown();
+  Deno.exit(0);
+};
+
+Deno.addSignalListener("SIGTERM", shutdown);
+Deno.addSignalListener("SIGINT", shutdown);
