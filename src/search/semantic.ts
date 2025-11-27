@@ -3,6 +3,7 @@
  */
 
 import { getLogger } from "@logtape/logtape";
+import type { FeatureExtractionPipeline } from "@huggingface/transformers";
 import type { SimilarityResult, ToolMetadata } from "./types.ts";
 import { SUPPORTED_MODELS } from "./types.ts";
 import { getDefaultDataDir } from "../utils/paths.ts";
@@ -10,11 +11,18 @@ import { getDefaultDataDir } from "../utils/paths.ts";
 const logger = getLogger(["toolscript", "search", "semantic"]);
 
 /**
+ * JSON Schema property with optional description
+ */
+interface JSONSchemaProperty {
+  description?: string;
+  [key: string]: unknown;
+}
+
+/**
  * Semantic search engine using vector embeddings
  */
 export class SemanticEngine {
-  // deno-lint-ignore no-explicit-any
-  private pipelineInstance: any | null = null;
+  private pipelineInstance: FeatureExtractionPipeline | null = null;
   private embeddings: Map<string, Float32Array> = new Map();
   private modelName: string;
   private device: "auto" | "webgpu" | "cpu";
@@ -116,8 +124,8 @@ export class SemanticEngine {
         normalize: true,
       });
 
-      // Convert to Float32Array
-      const embedding = new Float32Array(result.data);
+      // Convert to Float32Array (result.data is a TypedArray that needs conversion)
+      const embedding = new Float32Array(Array.from(result.data as ArrayLike<number>));
 
       return embedding;
     } catch (error) {
@@ -168,8 +176,7 @@ export class SemanticEngine {
       const properties = tool.inputSchema.properties as Record<string, unknown>;
       const paramList = Object.entries(properties)
         .map(([name, schema]: [string, unknown]) => {
-          // deno-lint-ignore no-explicit-any
-          const desc = (schema as any)?.description || "";
+          const desc = (schema as JSONSchemaProperty)?.description || "";
           return desc ? `${name} (${desc})` : name;
         })
         .join(", ");

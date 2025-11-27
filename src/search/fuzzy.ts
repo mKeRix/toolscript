@@ -2,7 +2,7 @@
  * Fuzzy search engine using Fuse.js for keyword-based matching
  */
 
-import Fuse from "fuse.js";
+import Fuse, { type IFuseOptions } from "fuse.js";
 import { getLogger } from "@logtape/logtape";
 import type { FuzzyResult, ToolMetadata } from "./types.ts";
 
@@ -28,8 +28,7 @@ export class FuzzyEngine {
    * Build Fuse.js index
    */
   private buildIndex(): void {
-    // deno-lint-ignore no-explicit-any
-    const options: any = {
+    const options: IFuseOptions<ToolMetadata> = {
       keys: [
         { name: "serverName", weight: 0.3 },
         { name: "toolName", weight: 0.5 },
