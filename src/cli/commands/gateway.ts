@@ -14,7 +14,7 @@ import { getDefaultDataDir } from "../../utils/paths.ts";
  */
 export const gatewayStartCommand = new Command()
   .description("Start the MCP gateway server")
-  .type("device", new EnumType(["webgpu", "cpu"]))
+  .type("device", new EnumType(["auto", "webgpu", "cpu"]))
   .option("-p, --port <port:number>", "Port to listen on (default: random)", { default: 0 })
   .option("-H, --hostname <hostname:string>", "Hostname to bind to", { default: "localhost" })
   .option("-c, --config <path:string>", "Path to config file", {

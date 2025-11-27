@@ -17,11 +17,12 @@ export class SemanticEngine {
   private pipelineInstance: any | null = null;
   private embeddings: Map<string, Float32Array> = new Map();
   private modelName: string;
-  private device: "webgpu" | "cpu";
+  private device: "auto" | "webgpu" | "cpu";
+  private actualDevice: "webgpu" | "cpu" | null = null;
   private dataDir: string;
   private initialized = false;
 
-  constructor(modelName: string, device: "webgpu" | "cpu" = "webgpu", dataDir?: string) {
+  constructor(modelName: string, device: "auto" | "webgpu" | "cpu" = "auto", dataDir?: string) {
     this.modelName = modelName;
     this.device = device;
     this.dataDir = dataDir || getDefaultDataDir();
@@ -46,14 +47,39 @@ export class SemanticEngine {
       // Dynamic import to avoid loading native modules at parse time
       const { pipeline } = await import("@huggingface/transformers");
 
-      // Use configured device (defaults to WebGPU for better performance)
+      // Determine actual device to use
+      let deviceToUse: "webgpu" | "cpu" = "cpu";
+
+      if (this.device === "auto") {
+        // Try WebGPU first, fallback to CPU
+        try {
+          // Test if WebGPU is available
+          if (typeof navigator !== "undefined" && "gpu" in navigator) {
+            deviceToUse = "webgpu";
+            logger.info`Auto-detected WebGPU support, using GPU acceleration`;
+          } else {
+            deviceToUse = "cpu";
+            logger.info`WebGPU not available, using CPU`;
+          }
+        } catch {
+          deviceToUse = "cpu";
+          logger.info`WebGPU detection failed, using CPU`;
+        }
+      } else {
+        deviceToUse = this.device;
+        logger.info`Using configured device: ${deviceToUse}`;
+      }
+
+      this.actualDevice = deviceToUse;
+
+      // Initialize pipeline with selected device
       const modelCacheDir = `${this.dataDir}/models`;
       this.pipelineInstance = await pipeline(
         "feature-extraction",
         this.modelName,
         {
           dtype: "fp32", // Full precision for better accuracy
-          device: this.device, // Use WebGPU by default, fallback to CPU if configured
+          device: deviceToUse,
           cache_dir: modelCacheDir, // Store models in toolscript data directory
           session_options: {
             logSeverityLevel: 3, // ERROR level - suppress warnings
@@ -234,5 +260,12 @@ export class SemanticEngine {
    */
   isInitialized(): boolean {
     return this.initialized;
+  }
+
+  /**
+   * Get the actual device being used (after auto-detection)
+   */
+  getActualDevice(): "webgpu" | "cpu" | null {
+    return this.actualDevice;
   }
 }

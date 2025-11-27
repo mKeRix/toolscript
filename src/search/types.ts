@@ -42,8 +42,8 @@ export interface SearchResult {
 export interface SearchConfig {
   /** Embedding model name */
   model: string;
-  /** Device to use (webgpu for GPU acceleration, cpu for CPU-only) */
-  device: "webgpu" | "cpu";
+  /** Device to use (auto=detect WebGPU and fallback to CPU, webgpu=GPU only, cpu=CPU only) */
+  device: "auto" | "webgpu" | "cpu";
   /** Maximum number of results */
   limit: number;
   /** Minimum confidence threshold (0-1) */
@@ -150,7 +150,7 @@ export const SUPPORTED_MODELS: Record<string, ModelConfig> = {
  */
 export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
   model: "Xenova/bge-small-en-v1.5",
-  device: "webgpu",
+  device: "auto",
   limit: 3,
   threshold: 0.35,
   alpha: 0.7,

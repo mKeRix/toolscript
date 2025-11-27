@@ -5,7 +5,7 @@ import { DEFAULT_SEARCH_CONFIG } from "./types.ts";
 Deno.test("validateSearchConfig - returns errors for invalid config", () => {
   const errors = validateSearchConfig({
     model: "test",
-    device: "invalid" as "webgpu",
+    device: "invalid" as "auto",
     limit: -1,
     threshold: 2,
     alpha: 1.5,

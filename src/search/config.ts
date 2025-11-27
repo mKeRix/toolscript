@@ -25,8 +25,8 @@ export function validateSearchConfig(config: SearchConfig): string[] {
     errors.push("alpha must be between 0 and 1");
   }
 
-  if (!["webgpu", "cpu"].includes(config.device)) {
-    errors.push("device must be 'webgpu' or 'cpu'");
+  if (!["auto", "webgpu", "cpu"].includes(config.device)) {
+    errors.push("device must be 'auto', 'webgpu', or 'cpu'");
   }
 
   return errors;
