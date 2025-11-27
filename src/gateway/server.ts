@@ -58,21 +58,6 @@ export class GatewayServer {
     // Create Hono app with routes
     const app = this.createApp();
 
-    // Set up signal handlers for clean shutdown
-    const handleShutdown = (signal: string) => {
-      logger.info(`Received ${signal}, shutting down gracefully...`);
-      this.stop().then(() => {
-        logger.info("Shutdown complete");
-        Deno.exit(0);
-      }).catch((error) => {
-        logger.error(`Error during shutdown: ${error}`);
-        Deno.exit(1);
-      });
-    };
-
-    Deno.addSignalListener("SIGTERM", () => handleShutdown("SIGTERM"));
-    Deno.addSignalListener("SIGINT", () => handleShutdown("SIGINT"));
-
     // Start HTTP server
     this.server = Deno.serve(
       {
