@@ -8,6 +8,7 @@ import { emptyConfig, loadConfig } from "../../config/loader.ts";
 import { GatewayServer } from "../../gateway/server.ts";
 import { configureLogger } from "../../utils/logger.ts";
 import { getDefaultDataDir } from "../../utils/paths.ts";
+import type { SearchConfig } from "../../search/mod.ts";
 
 /**
  * Gateway start command
@@ -39,7 +40,7 @@ export const gatewayStartCommand = new Command()
     const config = await loadConfig(options.config) || emptyConfig();
 
     // Build search config from CLI options
-    const searchConfig: Record<string, unknown> = {
+    const searchConfig: Partial<SearchConfig> = {
       dataDir: options.dataDir,
     };
     if (options.searchModel) searchConfig.model = options.searchModel;

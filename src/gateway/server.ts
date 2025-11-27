@@ -8,7 +8,7 @@ import { ServerAggregator } from "./aggregator.ts";
 import { generateToolsModule, TypeCache } from "../types/generator.ts";
 import { getLogger } from "../utils/logger.ts";
 import { SearchEngine } from "../search/mod.ts";
-import type { ToolMetadata } from "../search/mod.ts";
+import type { SearchConfig, ToolMetadata } from "../search/mod.ts";
 
 const logger = getLogger("gateway");
 
@@ -18,7 +18,7 @@ const logger = getLogger("gateway");
 export interface GatewayOptions {
   port?: number;
   hostname?: string;
-  searchConfig?: Record<string, unknown>;
+  searchConfig?: Partial<SearchConfig>;
 }
 
 /**
@@ -217,7 +217,7 @@ export class GatewayServer {
    */
   private async initializeSearchEngine(
     config: ToolscriptConfig,
-    searchConfig?: Record<string, unknown>,
+    searchConfig?: Partial<SearchConfig>,
   ): Promise<void> {
     try {
       // Get server names for config hash
