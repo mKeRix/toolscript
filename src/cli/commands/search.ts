@@ -5,7 +5,7 @@
 import { Command, EnumType } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { dedent } from "@std/text/unstable-dedent";
-import { toCamelCase } from "../../types/naming.ts";
+import { fetchTypes, formatTypesOutput } from "../utils/types-output.ts";
 
 /**
  * Search result from gateway
@@ -160,38 +160,23 @@ async function outputTypesFormat(
   const toolIds = results.map((r) => r.tool.toolId).join(",");
 
   // Fetch TypeScript types for matching tools
-  const typesResponse = await fetch(
-    `${gatewayUrl}/runtime/tools.ts?filter=${encodeURIComponent(toolIds)}`,
-  );
-
-  if (!typesResponse.ok) {
-    console.error(`Failed to fetch types: ${typesResponse.statusText}`);
-    Deno.exit(1);
-  }
-
-  const typesCode = await typesResponse.text();
+  const typesCode = await fetchTypes(gatewayUrl, toolIds);
 
   // Build confidence table
   const confidenceTable = buildConfidenceTable(results);
 
-  // Output combined result
-  console.log(dedent`
-    ## Search Results
+  // Format output with preamble and specific usage example
+  const output = formatTypesOutput(typesCode, {
+    preamble: dedent`
+      ## Search Results
 
-    ${confidenceTable}
+      ${confidenceTable}
+    `,
+    usageExample: {
+      serverName: results[0].tool.serverName,
+      toolName: results[0].tool.toolName,
+    },
+  });
 
-    \`\`\`typescript
-    ${typesCode}
-    \`\`\`
-
-    Usage example:
-    \`\`\`typescript
-    import { tools } from "toolscript";
-
-    // Call the top matching tool
-    const result = await tools.${toCamelCase(results[0].tool.serverName)}.${
-    toCamelCase(results[0].tool.toolName)
-  }(params);
-    \`\`\`
-  `);
+  console.log(output);
 }
