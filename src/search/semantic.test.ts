@@ -177,12 +177,10 @@ Deno.test({
   name: "SemanticEngine - device configuration",
   fn() {
     // Verify different device options can be configured
-    const engineAuto = new SemanticEngine("Xenova/all-MiniLM-L6-v2", "auto");
+    const engineWebGpu = new SemanticEngine("Xenova/all-MiniLM-L6-v2", "webgpu");
     const engineCpu = new SemanticEngine("Xenova/all-MiniLM-L6-v2", "cpu");
-    const engineGpu = new SemanticEngine("Xenova/all-MiniLM-L6-v2", "gpu");
 
-    assertEquals(engineAuto.isInitialized(), false);
+    assertEquals(engineWebGpu.isInitialized(), false);
     assertEquals(engineCpu.isInitialized(), false);
-    assertEquals(engineGpu.isInitialized(), false);
   },
 });

@@ -17,11 +17,11 @@ export class SemanticEngine {
   private pipelineInstance: any | null = null;
   private embeddings: Map<string, Float32Array> = new Map();
   private modelName: string;
-  private device: "auto" | "cpu" | "gpu";
+  private device: "webgpu" | "cpu";
   private dataDir: string;
   private initialized = false;
 
-  constructor(modelName: string, device: "auto" | "cpu" | "gpu" = "auto", dataDir?: string) {
+  constructor(modelName: string, device: "webgpu" | "cpu" = "webgpu", dataDir?: string) {
     this.modelName = modelName;
     this.device = device;
     this.dataDir = dataDir || getDefaultDataDir();
@@ -46,15 +46,18 @@ export class SemanticEngine {
       // Dynamic import to avoid loading native modules at parse time
       const { pipeline } = await import("@huggingface/transformers");
 
-      // Let transformers.js handle device selection and fallback automatically
+      // Use configured device (defaults to WebGPU for better performance)
       const modelCacheDir = `${this.dataDir}/models`;
       this.pipelineInstance = await pipeline(
         "feature-extraction",
         this.modelName,
         {
           dtype: "fp32", // Full precision for better accuracy
-          device: this.device, // transformers.js handles platform-specific devices and fallback
+          device: this.device, // Use WebGPU by default, fallback to CPU if configured
           cache_dir: modelCacheDir, // Store models in toolscript data directory
+          session_options: {
+            logSeverityLevel: 3, // ERROR level - suppress warnings
+          },
         },
       );
       logger.debug`Using model cache directory: ${modelCacheDir}`;

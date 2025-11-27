@@ -15,7 +15,7 @@
     "jsr:@std/regexp@^1.0.1": "1.0.1",
     "jsr:@std/text@1": "1.0.16",
     "jsr:@std/text@~1.0.7": "1.0.16",
-    "npm:@mkerix/transformers@3.8.0-patch.2": "3.8.0-patch.2",
+    "npm:@mkerix/transformers@3.8.0-patch.3": "3.8.0-patch.3",
     "npm:@modelcontextprotocol/sdk@1.22.0": "1.22.0_ajv@8.17.1_express@5.1.0_zod@3.25.76",
     "npm:@modelcontextprotocol/sdk@^1.17.4": "1.22.0_ajv@8.17.1_express@5.1.0_zod@3.25.76",
     "npm:@types/node@*": "24.2.0",
@@ -262,8 +262,8 @@
     "@jsdevtools/ono@7.1.3": {
       "integrity": "sha512-4JQNk+3mVzK3xh2rqd6RB4J46qUR19azEHBneZyTZM+c456qOrbbM/5xcR8huNCCcbVt7+UmizG6GuUvPvKUYg=="
     },
-    "@mkerix/transformers@3.8.0-patch.2": {
-      "integrity": "sha512-Hf4FUSJOmqm40P0Ccp/EbbUYTn1blytfughaq19mi3CQVydpSjnNO0MHjQbd7JgibocU8Z05ZT5I9FyecyfbSQ==",
+    "@mkerix/transformers@3.8.0-patch.3": {
+      "integrity": "sha512-Zh2JUXBVUHsH0YcnXa/RIvtrce1yGC93Ztcwvhbrg8NdMkCOZj7RNW5HvqrwRUVEnYDSjE5OshiEwGalMzvbnA==",
       "dependencies": [
         "@huggingface/jinja",
         "onnxruntime-node",
@@ -1356,7 +1356,7 @@
       "jsr:@logtape/logtape@0.8",
       "jsr:@std/assert@1",
       "jsr:@std/text@1",
-      "npm:@mkerix/transformers@3.8.0-patch.2",
+      "npm:@mkerix/transformers@3.8.0-patch.3",
       "npm:@modelcontextprotocol/sdk@1.22.0",
       "npm:express@5.1.0",
       "npm:fuse.js@7",
