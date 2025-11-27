@@ -27,7 +27,7 @@ toolscript gateway start [options]
 --config <path>              Path to config file (default: ".toolscript.json")
 --search-model <name>        Embedding model for semantic search
                              (default: "Xenova/bge-small-en-v1.5")
---search-device <device>     Device for search engine: auto, cpu, gpu
+--search-device <device>     Device for search engine: auto, cpu, webgpu
                              (default: "auto")
 --search-alpha <number>      Weight for semantic vs fuzzy search (0-1)
                              0 = fuzzy only, 1 = semantic only
@@ -666,9 +666,9 @@ Verify tool schemas are valid JSON Schema.
   toolscript gateway start --search-device cpu
   ```
 
-- **GPU mode**: Faster on supported platforms (Windows, Linux x64)
+- **WebGPU mode**: Faster on supported platforms
   ```bash
-  toolscript gateway start --search-device gpu
+  toolscript gateway start --search-device webgpu
   ```
 
 - **Cache**: Keep enabled for faster repeated searches (default)

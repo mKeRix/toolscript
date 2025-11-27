@@ -191,6 +191,8 @@ export class SemanticEngine {
 
   /**
    * Compute cosine similarity between two embeddings
+   * Since embeddings are normalized (normalize: true in pipeline config),
+   * cosine similarity equals the dot product
    */
   private cosineSimilarity(a: Float32Array, b: Float32Array): number {
     if (a.length !== b.length) {
@@ -198,20 +200,11 @@ export class SemanticEngine {
     }
 
     let dotProduct = 0;
-    let normA = 0;
-    let normB = 0;
-
     for (let i = 0; i < a.length; i++) {
       dotProduct += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
     }
 
-    // Embeddings are already normalized, so this simplifies to dot product
-    // But we calculate it properly for robustness
-    const similarity = dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-
-    return similarity;
+    return dotProduct;
   }
 
   /**

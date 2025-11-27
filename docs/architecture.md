@@ -52,7 +52,7 @@ The search engine provides hybrid tool discovery:
 1. **Semantic Search**: Vector embeddings using transformer models (transformers.js)
    - Default model: `Xenova/bge-small-en-v1.5`
    - Alternative: `Xenova/all-MiniLM-L6-v2`
-   - Device support: CPU (all platforms), GPU (Windows/Linux)
+   - Device support: CPU (all platforms), WebGPU
    - Understands natural language queries
 
 2. **Fuzzy Search**: Keyword-based matching with typo tolerance
@@ -142,7 +142,7 @@ Plugin directory: `plugins/toolscript/`
 5. Initialize semantic engine:
    a. Download embedding model (first run only)
    b. Load model into memory
-   c. Configure device (CPU/GPU)
+   c. Configure device (CPU/WebGPU)
 6. Initialize fuzzy engine (lightweight, no download)
 7. Index all tools from connected MCP servers:
    a. Generate embeddings for new/changed tools
