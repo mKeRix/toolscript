@@ -353,8 +353,6 @@ console.log("sse:", JSON.stringify(reverseResult));
     assertEquals(stats.toolsIndexed > 0, true, "Should have indexed some tools");
     assertEquals(stats.semanticAvailable, true, "Semantic search must be available");
     assertEquals(stats.model.length > 0, true, "Should have a model name");
-
-    console.log(`Search stats: ${stats.toolsIndexed} tools indexed, model=${stats.model}`);
   });
 
   await t.step("CLI search should support types output format", async () => {
