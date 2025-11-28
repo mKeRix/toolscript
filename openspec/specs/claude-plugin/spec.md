@@ -132,27 +132,36 @@ The plugin SHALL provide a hook that kills gateway process on session end and cl
 - **THEN** hook cleans up stale PID file
 
 ### Requirement: Skill Documentation
-The plugin SHALL provide clear, lean documentation using progressive disclosure.
+The plugin **MUST** update skill documentation to recommend semantic search as the primary tool discovery method.
 
-#### Scenario: Skill description
-- **WHEN** LLM views available skills
-- **THEN** skill has clear, concise description of capabilities
+#### Scenario: Search-first workflow recommended
+**WHEN** LLM loads toolscript skill documentation
+**THEN** skill file at `plugins/toolscript/skills/toolscript/SKILL.md` recommends search as primary discovery method
+**AND** lists list-servers/list-tools as fallback options
 
-#### Scenario: Core content is lean
-- **WHEN** skill file is loaded
-- **THEN** core skill file contains only essential instructions
+#### Scenario: Search command examples
+**WHEN** skill documentation shows usage examples
+**THEN** examples demonstrate `toolscript search "<query>" --output types` workflow
+**AND** show both table output (for browsing) and types output (for LLM workflow)
 
-#### Scenario: Detailed content in references
-- **WHEN** LLM needs detailed information
-- **THEN** skill references point to detailed documentation in references/ directory
+#### Scenario: Types output example with confidence
+**WHEN** skill documentation shows types output format
+**THEN** example displays confidence table in Markdown preamble
+**AND** shows complete TypeScript module matching get-types format
+**AND** confidence scores visible in table, NOT in code JSDoc comments
 
-#### Scenario: Usage examples
-- **WHEN** skill documentation is displayed
-- **THEN** includes example invocations and expected outputs
+#### Scenario: Updated recommended workflow
+**WHEN** skill documentation describes recommended workflow
+**THEN** workflow is:
+  1. Search for tools using natural language (`toolscript search "<query>" --output types`)
+  2. Use returned TypeScript types directly in toolscript code
+  3. Execute toolscript with inline code
+**AND** fallback workflow documented: If search unavailable, use `list-servers` then `list-tools <server>` then `get-types`
 
-#### Scenario: When to use guidance
-- **WHEN** skill documentation is displayed
-- **THEN** includes guidance on when to use the skill
+#### Scenario: Search types output format
+**WHEN** skill documentation shows search with `--output types` example
+**THEN** output shows format:
+```markdown
 
 ### Requirement: Session Isolation
 The plugin SHALL ensure gateway instances are isolated per session.

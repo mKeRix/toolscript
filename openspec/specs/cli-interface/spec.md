@@ -53,31 +53,31 @@ The CLI SHALL provide a `list-tools` command that displays tools for a specific 
 - **THEN** system displays tool names with their descriptions
 
 ### Requirement: Get Types Command
-The CLI SHALL provide a `get-types` command that fetches and outputs TypeScript type definitions and usage examples from gateway HTTP endpoint in Markdown format.
+The CLI's existing Get Types Command **MUST** be modified to use the filter parameter instead of server/tool query parameters.
 
-#### Scenario: Fetch types from gateway HTTP endpoint
-- **WHEN** user runs `toolscript get-types github create_issue`
-- **THEN** system fetches module from gateway at ${TOOLSCRIPT_GATEWAY_URL}/runtime/tools.ts?server=github&tool=createIssue and displays filtered types
+#### Scenario: Fetch types using filter parameter
+**WHEN** user runs `toolscript get-types --filter github__create_issue`
+**THEN** system fetches module from gateway at `${TOOLSCRIPT_GATEWAY_URL}/runtime/tools.ts?filter=github__create_issue`
+**AND** displays TypeScript types in Markdown format
 
 #### Scenario: Get types for all tools in server
-- **WHEN** user runs `toolscript get-types github`
-- **THEN** system fetches module from gateway HTTP endpoint with ?server=github query parameter
+**WHEN** user runs `toolscript get-types --filter github`
+**THEN** system fetches module from gateway HTTP endpoint with `?filter=github` query parameter
+**AND** returns all tools from github server
 
-#### Scenario: Use query parameters for filtering
-- **WHEN** types command requests specific server or tool
-- **THEN** system uses query parameters server and tool to filter generated module at HTTP endpoint
+#### Scenario: Get types for multiple servers and tools
+**WHEN** user runs `toolscript get-types --filter github,myserver__echo`
+**THEN** system fetches module with `?filter=github,myserver__echo` query parameter
+**AND** returns combined TypeScript module with all specified tools
 
-#### Scenario: Markdown output format with clean import
-- **WHEN** types command executes
-- **THEN** first code block contains TypeScript type definitions, second code block shows clean import syntax and camelCase tool calls
-
-#### Scenario: Clean import example in output
-- **WHEN** types command generates usage example
-- **THEN** example shows import { tools } from "toolscript" and tools.github.createIssue() syntax
+#### Scenario: Markdown output format preserved
+**WHEN** types command executes with filter parameter
+**THEN** output format matches existing behavior: first code block contains TypeScript definitions, second code block shows usage example
+**AND** example shows `import { tools } from "toolscript"` and camelCase tool calls
 
 #### Scenario: No config file for types
-- **WHEN** user runs `toolscript get-types github` with no config file
-- **THEN** system displays error indicating server not found (zero servers configured)
+**WHEN** user runs `toolscript get-types --filter github` with no config file
+**THEN** system displays error indicating server not found (zero servers configured)
 
 ### Requirement: Execute Inline Code
 The CLI SHALL provide an `exec` command that executes inline TypeScript code.

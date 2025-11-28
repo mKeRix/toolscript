@@ -43,19 +43,4 @@ The gateway's existing Type Filtering requirement **MUST** be modified to replac
 
 ## REMOVED Requirements
 
-### Requirement: Type Filtering (Old Query Parameters)
-The gateway's existing server/tool query parameter filtering **MUST** be removed and replaced with the filter parameter.
-
-#### Scenario: Old server parameter no longer supported
-**WHEN** client requests GET `/runtime/tools.ts?server=github`
-**THEN** gateway returns error response indicating parameter not supported
-**AND** error message suggests using `filter=github` instead
-
-#### Scenario: Old tool parameter no longer supported
-**WHEN** client requests GET `/runtime/tools.ts?server=github&tool=createIssue`
-**THEN** gateway returns error response indicating parameters not supported
-**AND** error message suggests using `filter=github__createIssue` instead
-
-#### Scenario: Tool filter without server (old behavior)
-**WHEN** client requests GET `/runtime/tools.ts?tool=createIssue`
-**THEN** gateway returns error indicating this parameter combination is no longer supported
+None - this spec modifies an existing requirement but does not remove any requirements.

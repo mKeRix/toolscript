@@ -151,31 +151,39 @@ The gateway SHALL serve generated TypeScript tools module via HTTP for Deno HTTP
 - **THEN** gateway returns module with export const tools = {}
 
 ### Requirement: Type Filtering
-The gateway SHALL support query parameter filtering to reduce generated type module size for specific use cases.
+The gateway's existing Type Filtering requirement **MUST** be modified to replace server/tool query parameters with a unified filter parameter.
 
 #### Scenario: Filter by server name
-- **WHEN** client requests GET /runtime/tools.ts?server=github
-- **THEN** gateway returns module containing only tools from github server
+**WHEN** client requests GET `/runtime/tools.ts?filter=github`
+**THEN** gateway returns module containing only tools from github server
+**AND** output format matches existing type generation behavior
 
-#### Scenario: Filter by server and tool
-- **WHEN** client requests GET /runtime/tools.ts?server=github&tool=createIssue
-- **THEN** gateway returns module containing only the createIssue tool from github server
+#### Scenario: Filter by specific tool using double underscore separator
+**WHEN** client requests GET `/runtime/tools.ts?filter=myserver__echo`
+**THEN** gateway parses "myserver" as server name
+**AND** parses "echo" as tool name
+**AND** returns module containing only the echo tool from myserver
+
+#### Scenario: Filter multiple servers and tools
+**WHEN** client requests GET `/runtime/tools.ts?filter=github,myserver__echo,otherserver__read_file`
+**THEN** gateway parses comma-separated identifiers
+**AND** resolves "github" to all tools from github server
+**AND** resolves "myserver__echo" to specific echo tool
+**AND** resolves "otherserver__read_file" to specific read_file tool
+**AND** returns module with all matching tools combined
 
 #### Scenario: Return all tools without filter
-- **WHEN** client requests GET /runtime/tools.ts with no query parameters
-- **THEN** gateway returns module with all tools from all servers
+**WHEN** client requests GET `/runtime/tools.ts` with no query parameters
+**THEN** gateway returns module with all tools from all servers
+**AND** behavior matches existing unfiltered endpoint
 
-#### Scenario: Invalid server name
-- **WHEN** client requests GET /runtime/tools.ts?server=nonexistent
-- **THEN** gateway returns module with empty tools object
+#### Scenario: Invalid server name in filter
+**WHEN** client requests GET `/runtime/tools.ts?filter=nonexistent`
+**THEN** gateway returns module with empty tools object
 
-#### Scenario: Invalid tool name
-- **WHEN** client requests GET /runtime/tools.ts?server=github&tool=nonexistent
-- **THEN** gateway returns module with empty tools object for that server
-
-#### Scenario: Tool filter requires server
-- **WHEN** client requests GET /runtime/tools.ts?tool=createIssue without server parameter
-- **THEN** gateway returns error or ignores tool filter and returns all servers
+#### Scenario: Invalid tool name in filter
+**WHEN** client requests GET `/runtime/tools.ts?filter=github__nonexistent`
+**THEN** gateway returns module excluding that invalid tool reference
 
 ### Requirement: Health Monitoring
 The gateway SHALL provide health check endpoints.

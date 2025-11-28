@@ -35,15 +35,4 @@ The CLI's existing Get Types Command **MUST** be modified to use the filter para
 
 ## REMOVED Requirements
 
-### Requirement: Get Types Command (Old Parameter Format)
-The CLI's get-types command **MUST** remove support for the old positional server/tool arguments.
-
-#### Scenario: Old server parameter no longer supported
-**WHEN** user runs `toolscript get-types github`
-**THEN** system displays error message indicating this syntax is no longer supported
-**AND** suggests using `--filter github` instead
-
-#### Scenario: Old server and tool parameters no longer supported
-**WHEN** user runs `toolscript get-types github create_issue`
-**THEN** system displays error message indicating this syntax is no longer supported
-**AND** suggests using `--filter github__create_issue` instead
+None - this spec modifies an existing requirement but does not remove any requirements.
