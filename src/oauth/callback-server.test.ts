@@ -220,22 +220,6 @@ Deno.test("startCallbackServer - handles concurrent requests", async () => {
   assertEquals(codes, ["code1", "code2", "code3"]);
 });
 
-Deno.test("startCallbackServer - success page includes auto-close script", async () => {
-  await using server = await startCallbackServer({
-    onCallback: () => {},
-  });
-
-  const response = await fetch(
-    `http://localhost:${server.port}/oauth/callback?code=test-code`,
-  );
-
-  const html = await response.text();
-
-  // Should include script to auto-close window
-  assertEquals(html.includes("<script>"), true);
-  assertEquals(html.includes("window.close()"), true);
-});
-
 Deno.test("startCallbackServer - preserves state parameter", async () => {
   await using server = await startCallbackServer({
     onCallback: () => {},

@@ -98,7 +98,7 @@ export async function startCallbackServer(
         onCallback({ code });
 
         return new Response(
-          "<html><body><h1>Authentication Successful!</h1><p>You can close this window and return to the terminal.</p><script>setTimeout(() => window.close(), 2000);</script></body></html>",
+          "<html><body><h1>Authentication Successful!</h1><p>You can close this window and return to the terminal.</p></body></html>",
           { headers: { "content-type": "text/html" } },
         );
       }
