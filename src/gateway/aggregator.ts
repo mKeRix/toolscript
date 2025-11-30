@@ -6,6 +6,7 @@ import type { ToolscriptConfig } from "../config/types.ts";
 import { McpClient } from "./mcp-client.ts";
 import { getLogger } from "../utils/logger.ts";
 import { UnauthorizedError } from "@modelcontextprotocol/sdk/client/auth.js";
+import { shouldIncludeTool, type ToolFilters } from "./tool-filter.ts";
 
 const logger = getLogger("aggregator");
 
@@ -27,6 +28,7 @@ export interface ToolInfo {
 export class ServerAggregator implements AsyncDisposable {
   private clients: Map<string, McpClient> = new Map();
   private tools: Map<string, ToolInfo> = new Map();
+  private serverFilters: Map<string, ToolFilters> = new Map();
 
   /**
    * Initialize and connect to all configured servers
@@ -34,6 +36,15 @@ export class ServerAggregator implements AsyncDisposable {
    */
   async initialize(config: ToolscriptConfig): Promise<void> {
     logger.info("Initializing server aggregator");
+
+    for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
+      if (serverConfig.includeTools || serverConfig.excludeTools) {
+        this.serverFilters.set(name, {
+          includeTools: serverConfig.includeTools,
+          excludeTools: serverConfig.excludeTools,
+        });
+      }
+    }
 
     // Connect to all servers in parallel
     const connectionPromises = Object.entries(config.mcpServers).map(
@@ -77,9 +88,17 @@ export class ServerAggregator implements AsyncDisposable {
           continue;
         }
 
+        let loadedCount = 0;
         for (const tool of tools) {
           if (!tool || !tool.name) {
             logger.warn(`Skipping invalid tool from ${serverName}:`, tool);
+            continue;
+          }
+
+          // Apply includeTools and excludeTools filters
+          const filters = this.serverFilters.get(serverName);
+          if (filters && !shouldIncludeTool(tool.name, filters)) {
+            logger.debug(`Tool ${tool.name} from ${serverName} filtered out`);
             continue;
           }
 
@@ -92,8 +111,9 @@ export class ServerAggregator implements AsyncDisposable {
             inputSchema: tool.inputSchema,
             outputSchema: tool.outputSchema,
           });
+          loadedCount++;
         }
-        logger.info(`Loaded ${tools.length} tools from server: ${serverName}`);
+        logger.info(`Loaded ${loadedCount}/${tools.length} tools from server: ${serverName}`);
       } catch (error) {
         logger.error(`Failed to list tools from server ${serverName}: ${error}`);
         if (error instanceof Error) {

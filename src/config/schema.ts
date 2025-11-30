@@ -13,6 +13,8 @@ const stdioServerSchema = z.object({
   command: z.string(),
   args: z.array(z.string()).optional(),
   env: z.record(z.string()).optional(),
+  includeTools: z.array(z.string()).optional(),
+  excludeTools: z.array(z.string()).optional(),
 });
 
 /**
@@ -22,6 +24,8 @@ const httpServerSchema = z.object({
   type: z.literal("http"),
   url: z.string().url(),
   headers: z.record(z.string()).optional(),
+  includeTools: z.array(z.string()).optional(),
+  excludeTools: z.array(z.string()).optional(),
 });
 
 /**
@@ -31,6 +35,8 @@ const sseServerSchema = z.object({
   type: z.literal("sse"),
   url: z.string().url(),
   headers: z.record(z.string()).optional(),
+  includeTools: z.array(z.string()).optional(),
+  excludeTools: z.array(z.string()).optional(),
 });
 
 /**

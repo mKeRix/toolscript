@@ -13,6 +13,19 @@ export type ServerType = "stdio" | "http" | "sse";
  */
 export interface BaseServerConfig {
   type: ServerType;
+  /**
+   * Optional list of tool names to include from this server.
+   * If specified, only these tools will be served.
+   * Tool names must be exact matches.
+   */
+  includeTools?: string[];
+  /**
+   * Optional list of tool names to exclude from this server.
+   * If specified, these tools will not be served.
+   * Tool names must be exact matches.
+   * Exclude filters are applied after include filters.
+   */
+  excludeTools?: string[];
 }
 
 /**
