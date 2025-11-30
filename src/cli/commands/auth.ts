@@ -11,11 +11,13 @@ import { createOAuthStorage } from "../../oauth/storage.ts";
 import { openBrowser } from "../../oauth/browser.ts";
 import { getLogger } from "@logtape/logtape";
 import { UnauthorizedError } from "@modelcontextprotocol/sdk/client/auth.js";
+import type { OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { startCallbackServer } from "../../oauth/callback-server.ts";
-import { connectToServer } from "../../gateway/mcp-utils.ts";
+import { connectToServer, createTransport } from "../../gateway/mcp-utils.ts";
 import type { ServerConfig } from "../../config/types.ts";
+import { createOAuthProvider } from "../../oauth/providers/index.ts";
 
 const logger = getLogger(["toolscript", "cli", "auth"]);
 
@@ -86,6 +88,7 @@ async function checkExistingAuth(
   serverConfig: ServerConfig,
   callbackUrl: string,
   onRedirect: (url: URL) => void,
+  authProvider: OAuthClientProvider,
 ): Promise<boolean> {
   try {
     await using _connection = await connectToServer({
@@ -93,6 +96,7 @@ async function checkExistingAuth(
       serverConfig,
       redirectUrl: callbackUrl,
       onRedirect,
+      authProvider,
       timeoutMs: 30000,
     });
     return true;
@@ -141,28 +145,39 @@ async function performOAuthFlow(
 async function finishAuthentication(
   serverName: string,
   serverConfig: ServerConfig,
-  callbackUrl: string,
   authCode: string,
+  authProvider: OAuthClientProvider,
 ): Promise<void> {
   console.log("Exchanging authorization code for access token...");
 
-  // Create a new connection to finish the auth flow
-  await using authConnection = await connectToServer({
+  // Create transport directly (without connecting client) to finish auth
+  const transport = createTransport({
     serverName,
     serverConfig,
-    redirectUrl: callbackUrl,
-    timeoutMs: 30000,
+    authProvider,
   });
 
-  // Finish auth with the authorization code
-  if (
-    authConnection.transport instanceof SSEClientTransport ||
-    authConnection.transport instanceof StreamableHTTPClientTransport
-  ) {
-    await authConnection.transport.finishAuth(authCode);
-  }
+  try {
+    // Finish auth with the authorization code - this exchanges code for tokens
+    // and saves them via the authProvider
+    if (
+      transport instanceof SSEClientTransport ||
+      transport instanceof StreamableHTTPClientTransport
+    ) {
+      await transport.finishAuth(authCode);
+    } else {
+      throw new Error(`Unexpected transport type for ${serverConfig.type} server`);
+    }
 
-  console.log("✓ Authentication successful! Credentials stored securely.");
+    console.log("✓ Authentication successful! Credentials stored securely.");
+  } finally {
+    // Clean up transport without connecting client
+    try {
+      await transport.close();
+    } catch (error) {
+      logger.error`Error closing transport: ${error}`;
+    }
+  }
 }
 
 /**
@@ -209,6 +224,16 @@ export async function authenticateServer(serverName: string, configPath?: string
   const callbackUrl = `http://localhost:${callbackServer.port}/oauth/callback`;
   logger.debug`Callback server started on port ${callbackServer.port}`;
 
+  const storage = createOAuthStorage();
+  const authProvider = createOAuthProvider(
+    serverName,
+    storage,
+    callbackUrl,
+    (url: URL) => {
+      authorizationUrl = url;
+    },
+  );
+
   try {
     const isAuthenticated = await checkExistingAuth(
       serverName,
@@ -217,6 +242,7 @@ export async function authenticateServer(serverName: string, configPath?: string
       (url: URL) => {
         authorizationUrl = url;
       },
+      authProvider,
     );
 
     if (isAuthenticated) {
@@ -225,7 +251,7 @@ export async function authenticateServer(serverName: string, configPath?: string
     }
 
     const authCode = await performOAuthFlow(authorizationUrl, authComplete.promise);
-    await finishAuthentication(serverName, serverConfig, callbackUrl, authCode);
+    await finishAuthentication(serverName, serverConfig, authCode, authProvider);
   } catch (error) {
     logger.error`Authentication failed: ${error}`;
     console.error(`Error: Authentication failed`);

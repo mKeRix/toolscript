@@ -6,6 +6,8 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { ServerConfig } from "../config/types.ts";
 import { getLogger } from "../utils/logger.ts";
 import { connectToServer, McpConnection } from "./mcp-utils.ts";
+import { createOAuthStorage } from "../oauth/storage.ts";
+import { createOAuthProvider } from "../oauth/providers/index.ts";
 
 const logger = getLogger("mcp-client");
 
@@ -37,13 +39,17 @@ export class McpClient implements AsyncDisposable {
   async connect(): Promise<void> {
     logger.info(`Connecting to ${this.config.type} server: ${this.name}`);
 
-    // Use common connection utilities
-    // Note: No redirectUrl passed - will fail on auth errors instead of initiating flow
+    // For HTTP/SSE servers, create an OAuth provider for injecting auth only
+    // Will not trigger the auth flow on unauthenticated errors
+    // User must authenticate separately using 'toolscript auth <server-name>'
+    const authProvider = ["http", "sse"].includes(this.config.type)
+      ? createOAuthProvider(this.name, createOAuthStorage(), "")
+      : undefined;
+
     this.connection = await connectToServer({
       serverName: this.name,
       serverConfig: this.config,
-      // No redirectUrl - OAuth provider will fail on auth errors
-      // User must authenticate separately using 'toolscript auth <server-name>'
+      authProvider,
       timeoutMs: 30000, // 30 second timeout
     });
 

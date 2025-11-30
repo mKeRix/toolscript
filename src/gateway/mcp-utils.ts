@@ -7,11 +7,10 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+import type { OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
 import { deadline } from "@std/async/deadline";
 import type { ServerConfig } from "../config/types.ts";
 import { getLogger } from "../utils/logger.ts";
-import { createOAuthStorage } from "../oauth/storage.ts";
-import { createOAuthProvider } from "../oauth/providers/index.ts";
 import packageInfo from "../../deno.json" with { type: "json" };
 
 const logger = getLogger("mcp-utils");
@@ -32,6 +31,7 @@ export interface TransportConfig {
   serverConfig: ServerConfig;
   redirectUrl?: string;
   onRedirect?: (url: URL) => void | Promise<void>;
+  authProvider?: OAuthClientProvider;
 }
 
 /**
@@ -41,7 +41,7 @@ export interface TransportConfig {
  * @returns MCP transport instance
  */
 function createHTTPTransport(config: TransportConfig): McpTransport {
-  const { serverName, serverConfig, redirectUrl, onRedirect } = config;
+  const { serverConfig, authProvider } = config;
 
   // Type guard: this function is only called for HTTP/SSE servers
   if (serverConfig.type !== "http" && serverConfig.type !== "sse") {
@@ -54,17 +54,6 @@ function createHTTPTransport(config: TransportConfig): McpTransport {
   if (serverConfig.headers) {
     requestInit.headers = serverConfig.headers;
   }
-
-  logger.debug(`Setting up OAuth2 provider for ${serverName}`);
-
-  const storage = createOAuthStorage();
-  const effectiveRedirectUrl = redirectUrl || "";
-  const authProvider = createOAuthProvider(
-    serverName,
-    storage,
-    effectiveRedirectUrl,
-    onRedirect,
-  );
 
   switch (serverConfig.type) {
     case "sse":
@@ -115,6 +104,7 @@ export interface ConnectOptions {
   serverConfig: ServerConfig;
   redirectUrl?: string;
   onRedirect?: (url: URL) => void | Promise<void>;
+  authProvider?: OAuthClientProvider;
   timeoutMs?: number;
 }
 
@@ -176,6 +166,7 @@ export async function connectToServer(
     serverConfig,
     redirectUrl,
     onRedirect,
+    authProvider,
     timeoutMs = 30000, // 30 second default timeout
   } = options;
 
@@ -187,6 +178,7 @@ export async function connectToServer(
     serverConfig,
     redirectUrl,
     onRedirect,
+    authProvider,
   });
 
   const client = new Client(
