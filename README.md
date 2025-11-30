@@ -228,12 +228,108 @@ Environment:
 ### Server Types
 
 - **stdio**: Command-line MCP servers
-- **http**: HTTP-based MCP servers (coming soon)
-- **sse**: SSE-based MCP servers (coming soon)
+- **http**: HTTP-based MCP servers with optional OAuth2
+- **sse**: SSE-based MCP servers with optional OAuth2
 
 ### Environment Variables
 
 Use `${VAR}` or `${VAR:-default}` syntax for environment variable substitution.
+
+## OAuth2 Authentication
+
+Toolscript supports OAuth2 authentication for HTTP and SSE MCP servers using the Authorization Code and Client Credentials flows.
+
+### Quick Start
+
+1. **Add OAuth config** to your `.toolscript.json`:
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.github.com/mcp",
+      "oauth": {
+        "clientId": "${GITHUB_CLIENT_ID}"
+      }
+    }
+  }
+}
+```
+
+2. **Authenticate**:
+
+```bash
+toolscript auth github
+```
+
+This will:
+- Perform OAuth discovery
+- Open your browser for authorization
+- Store credentials securely in `~/.toolscript/oauth/`
+- Tokens are automatically refreshed by the MCP SDK
+
+3. **Use authenticated servers**:
+
+```bash
+toolscript gateway start
+# Gateway automatically uses stored OAuth credentials
+```
+
+### Authentication Flows
+
+**Authorization Code** (interactive, user-facing):
+- Used when `oauth.clientSecret` is NOT provided
+- Requires `toolscript auth <server>` command
+- Opens browser for user authorization
+
+**Client Credentials** (automatic, service-to-service):
+- Used when `oauth.clientSecret` IS provided
+- Authenticates automatically when gateway starts
+- No manual auth command needed
+
+```json
+{
+  "mcpServers": {
+    "api-server": {
+      "type": "http",
+      "url": "https://api.example.com/mcp",
+      "oauth": {
+        "clientId": "${API_CLIENT_ID}",
+        "clientSecret": "${API_CLIENT_SECRET}"
+      }
+    }
+  }
+}
+```
+
+### Checking Auth Status
+
+```bash
+# List all OAuth2 servers and their authentication status
+toolscript auth
+
+# Example output:
+# OAuth2 Servers:
+#
+# Status  Server   Flow Type            Authentication
+# ✓       github   authorization_code   authenticated
+# ✗       gitlab   authorization_code   not authenticated
+# ✓       api      client_credentials   authenticated
+```
+
+### Storage
+
+OAuth credentials are stored in:
+- Location: `~/.toolscript/oauth/<server-name>.json`
+- Permissions: 0600 (read/write owner only)
+- Contains: Client registration + access/refresh tokens
+
+### Requirements
+
+- OAuth2-protected MCP servers must support OAuth discovery
+- For Authorization Code flow: `clientId` required
+- For Client Credentials flow: `clientId` + `clientSecret` required
 
 ## Examples
 

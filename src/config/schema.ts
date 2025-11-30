@@ -6,6 +6,28 @@
 import { z } from "zod";
 
 /**
+ * OAuth2 configuration schema
+ * Uses OAuth discovery - manual endpoint configuration is not supported
+ * clientId is optional - uses dynamic registration if not provided
+ */
+const oauth2ConfigSchema = z.object({
+  clientId: z.string().min(1).optional(),
+  clientSecret: z.string().optional(),
+  scopes: z.array(z.string()).optional(),
+}).passthrough().refine(
+  (data) => {
+    // Reject manual OAuth endpoint configuration - we use OAuth discovery
+    const invalidFields = ["authorizationUrl", "tokenUrl", "redirectUri", "flow"];
+    const hasInvalidField = invalidFields.some((field) => field in data);
+    return !hasInvalidField;
+  },
+  {
+    message:
+      "Manual OAuth endpoints are not supported. OAuth2 configuration uses automatic discovery from the MCP server.",
+  },
+);
+
+/**
  * Stdio server configuration schema
  */
 const stdioServerSchema = z.object({
@@ -22,6 +44,7 @@ const httpServerSchema = z.object({
   type: z.literal("http"),
   url: z.string().url(),
   headers: z.record(z.string()).optional(),
+  oauth: oauth2ConfigSchema.optional(),
 });
 
 /**
@@ -31,6 +54,7 @@ const sseServerSchema = z.object({
   type: z.literal("sse"),
   url: z.string().url(),
   headers: z.record(z.string()).optional(),
+  oauth: oauth2ConfigSchema.optional(),
 });
 
 /**

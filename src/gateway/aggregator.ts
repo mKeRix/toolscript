@@ -5,6 +5,7 @@
 import type { ToolscriptConfig } from "../config/types.ts";
 import { McpClient } from "./mcp-client.ts";
 import { getLogger } from "../utils/logger.ts";
+import { UnauthorizedError } from "@modelcontextprotocol/sdk/client/auth.js";
 
 const logger = getLogger("aggregator");
 
@@ -21,31 +22,42 @@ export interface ToolInfo {
 }
 
 /**
- * Aggregator for multiple MCP servers
+ * Aggregator for multiple MCP servers with automatic cleanup
  */
-export class ServerAggregator {
+export class ServerAggregator implements AsyncDisposable {
   private clients: Map<string, McpClient> = new Map();
   private tools: Map<string, ToolInfo> = new Map();
 
   /**
    * Initialize and connect to all configured servers
+   * @param config - Toolscript configuration
    */
   async initialize(config: ToolscriptConfig): Promise<void> {
     logger.info("Initializing server aggregator");
 
-    // Connect to all servers
-    for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
-      try {
-        const client = new McpClient(name, serverConfig);
-        await client.connect();
-        this.clients.set(name, client);
-        logger.info(`Connected to server: ${name}`);
-      } catch (error) {
-        logger.error(`Failed to connect to server ${name}: ${error}`);
-      }
-    }
+    // Connect to all servers in parallel
+    const connectionPromises = Object.entries(config.mcpServers).map(
+      async ([name, serverConfig]) => {
+        try {
+          const client = new McpClient(name, serverConfig);
+          await client.connect();
+          this.clients.set(name, client);
+          return { name, success: true };
+        } catch (error) {
+          logger.error(`Failed to connect to server ${name}: ${error}`);
+          if (error instanceof UnauthorizedError) {
+            logger.error(`To authenticate, please run: toolscript auth ${name}`);
+          }
+          return { name, success: false, error };
+        }
+      },
+    );
+    const results = await Promise.allSettled(connectionPromises);
 
-    // Load all tools
+    const successful = results.filter((r) => r.status === "fulfilled" && r.value.success).length;
+    const failed = results.length - successful;
+    logger.info(`Connected to ${successful}/${results.length} servers (${failed} failed)`);
+
     await this.refreshTools();
   }
 
