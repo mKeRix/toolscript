@@ -4,7 +4,7 @@
 
 import { Command, EnumType } from "@cliffy/command";
 import { dedent } from "@std/text/unstable-dedent";
-import { emptyConfig, loadConfig } from "../../config/loader.ts";
+import { DEFAULT_CONFIG_PATHS, emptyConfig, loadConfig } from "../../config/loader.ts";
 import { GatewayServer } from "../../gateway/server.ts";
 import { configureLogger } from "../../utils/logger.ts";
 import { getDefaultDataDir } from "../../utils/paths.ts";
@@ -18,8 +18,8 @@ export const gatewayStartCommand = new Command()
   .type("device", new EnumType(["auto", "webgpu", "cpu"]))
   .option("-p, --port <port:number>", "Port to listen on (default: random)", { default: 0 })
   .option("-H, --hostname <hostname:string>", "Hostname to bind to", { default: "localhost" })
-  .option("-c, --config <path:string>", "Path to config file", {
-    default: "./.toolscript.json",
+  .option("-c, --config <paths:string>", "Path(s) to config file(s) (comma-separated)", {
+    default: DEFAULT_CONFIG_PATHS,
   })
   .option("--search-model <name:string>", "Embedding model for search")
   .option("--search-device <device:device>", "Device for search")
@@ -28,6 +28,7 @@ export const gatewayStartCommand = new Command()
   .option("--data-dir <path:string>", "Data directory for cache storage", {
     default: getDefaultDataDir(),
   })
+  .env("TOOLSCRIPT_CONFIG=<paths:string>", "Config file path(s)", { prefix: "TOOLSCRIPT_" })
   .env("TOOLSCRIPT_SEARCH_MODEL=<name:string>", "Embedding model", { prefix: "TOOLSCRIPT_" })
   .env("TOOLSCRIPT_SEARCH_DEVICE=<device:device>", "Search device", { prefix: "TOOLSCRIPT_" })
   .env("TOOLSCRIPT_SEARCH_ALPHA=<value:number>", "Search alpha weight", { prefix: "TOOLSCRIPT_" })

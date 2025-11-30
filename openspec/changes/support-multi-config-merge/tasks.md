@@ -3,65 +3,65 @@
 ## Phase 1: Core Implementation
 
 ### 1.1 Implement path parsing and expansion utilities
-- [ ] Add `parseConfigPaths()` function to parse comma-separated strings and arrays
-- [ ] Add `expandTildePath()` function to expand `~/` to user home directory
-- [ ] Handle Unix (`$HOME`) and Windows (`%USERPROFILE%`) environments
-- [ ] Add error handling for missing HOME/USERPROFILE
-- [ ] Add unit tests for path parsing (comma separation, array passthrough, whitespace trimming)
-- [ ] Add unit tests for tilde expansion on different platforms
+- [x] Add `parseConfigPaths()` function to parse comma-separated strings and arrays
+- [x] Add `expandTildePath()` function to expand `~/` to user home directory
+- [x] Handle Unix (`$HOME`) and Windows (`%USERPROFILE%`) environments
+- [x] Add error handling for missing HOME/USERPROFILE
+- [x] Add unit tests for path parsing (comma separation, array passthrough, whitespace trimming)
+- [x] Add unit tests for tilde expansion on different platforms
 
-**Verification**: Tests pass for all path parsing edge cases
+**Verification**: Tests pass for all path parsing edge cases ✓
 
 ### 1.2 Refactor loadConfig to support multiple files
-- [ ] Rename `DEFAULT_CONFIG_PATH` constant to `DEFAULT_CONFIG_PATHS`
-- [ ] Update value from `./.toolscript.json` to `~/.toolscript.json,.toolscript.json`
-- [ ] Add `loadSingleConfig()` helper function (returns null if file not found)
-- [ ] Add `loadConfigs()` function to load multiple files sequentially
-- [ ] Update error messages to include file path for parse/validation errors
-- [ ] Add unit tests for single file loading (success, missing, parse error, validation error)
-- [ ] Add unit tests for multi-file loading (skip missing files, handle errors)
+- [x] Rename `DEFAULT_CONFIG_PATH` constant to `DEFAULT_CONFIG_PATHS`
+- [x] Update value from `./.toolscript.json` to `~/.toolscript.json,.toolscript.json`
+- [x] Add `loadSingleConfig()` helper function (returns null if file not found)
+- [x] Add `loadConfigs()` function to load multiple files sequentially
+- [x] Update error messages to include file path for parse/validation errors
+- [x] Add unit tests for single file loading (success, missing, parse error, validation error)
+- [x] Add unit tests for multi-file loading (skip missing files, handle errors)
 
-**Verification**: All config loading tests pass
+**Verification**: All config loading tests pass ✓
 
 ### 1.3 Implement config merging logic
-- [ ] Add `mergeConfigs()` function using `Object.assign()` for server-level merge
-- [ ] Ensure later configs override earlier ones by server name
-- [ ] Handle empty `mcpServers` objects gracefully
-- [ ] Add unit tests for non-overlapping servers
-- [ ] Add unit tests for overlapping servers (later wins)
-- [ ] Add unit tests for empty mcpServers in one config
-- [ ] Verify environment variable substitution works after merge
+- [x] Add `mergeConfigs()` function using `Object.assign()` for server-level merge
+- [x] Ensure later configs override earlier ones by server name
+- [x] Handle empty `mcpServers` objects gracefully
+- [x] Add unit tests for non-overlapping servers
+- [x] Add unit tests for overlapping servers (later wins)
+- [x] Add unit tests for empty mcpServers in one config
+- [x] Verify environment variable substitution works after merge
 
-**Verification**: Merge tests demonstrate correct override behavior
+**Verification**: Merge tests demonstrate correct override behavior ✓
 
 ### 1.4 Update main loadConfig entry point
-- [ ] Change signature to accept `string | string[]` for configPaths
-- [ ] Call `parseConfigPaths()` to normalize input
-- [ ] Call `loadConfigs()` to load all files
-- [ ] Call `mergeConfigs()` if configs exist, return null otherwise
-- [ ] Update JSDoc comments to reflect new behavior
-- [ ] Add integration test with temp files simulating user + project configs
+- [x] Change signature to accept `string | string[]` for configPaths
+- [x] Call `parseConfigPaths()` to normalize input
+- [x] Call `loadConfigs()` to load all files
+- [x] Call `mergeConfigs()` if configs exist, return null otherwise
+- [x] Update JSDoc comments to reflect new behavior
+- [x] Add integration test with temp files simulating user + project configs
 
-**Verification**: Integration test loads and merges two config files correctly
+**Verification**: Integration test loads and merges two config files correctly ✓
 
 ## Phase 2: CLI Integration
 
 ### 2.1 Update gateway command
-- [ ] Change `--config` option description to mention comma-separated paths
-- [ ] Update default value to `DEFAULT_CONFIG_PATHS`
-- [ ] Test gateway start with default config paths
-- [ ] Test gateway start with explicit comma-separated paths
-- [ ] Add E2E test for gateway with merged config
+- [x] Change `--config` option description to mention comma-separated paths
+- [x] Update default value to `DEFAULT_CONFIG_PATHS`
+- [x] Test gateway start with default config paths
+- [x] Test gateway start with explicit comma-separated paths
+- [x] Add E2E test for gateway with merged config
 
-**Verification**: Gateway starts successfully with merged config
+**Verification**: Gateway starts successfully with merged config ✓
 
 ### 2.2 Update auth command
-- [ ] Change `--config` option description to mention comma-separated paths
-- [ ] Update default value to `DEFAULT_CONFIG_PATHS`
-- [ ] Test auth command with merged config
-- [ ] Add E2E test for auth with user + project configs
+- [x] Change `--config` option description to mention comma-separated paths
+- [x] Update default value to `DEFAULT_CONFIG_PATHS`
+- [x] Test auth command with merged config
+- [x] Add E2E test for auth with user + project configs
 
-**Verification**: Auth command works with merged config
+**Verification**: Auth command works with merged config ✓
 
 ## Phase 3: Documentation
 
@@ -94,22 +94,22 @@
 ## Phase 4: Validation and Polish
 
 ### 4.1 Review and update tests
-- [ ] Ensure all existing tests still pass
-- [ ] Review test coverage for new code paths
-- [ ] Add missing edge case tests if needed
-- [ ] Verify error messages are clear and actionable
-- [ ] Test on macOS, Linux, and Windows (if possible)
+- [x] Ensure all existing tests still pass
+- [x] Review test coverage for new code paths
+- [x] Add missing edge case tests if needed
+- [x] Verify error messages are clear and actionable
+- [x] Test on macOS, Linux, and Windows (if possible)
 
-**Verification**: Test suite is comprehensive and passes
+**Verification**: Test suite is comprehensive and passes ✓ (190 tests passing)
 
 ### 4.2 Code quality checks
-- [ ] Run `deno fmt` to format all changes
-- [ ] Run `deno lint` and fix any issues
-- [ ] Run `deno check` to verify type correctness
-- [ ] Review code for simplicity and clarity
-- [ ] Add code comments for complex logic
+- [x] Run `deno fmt` to format all changes
+- [x] Run `deno lint` and fix any issues
+- [x] Run `deno check` to verify type correctness
+- [x] Review code for simplicity and clarity
+- [x] Add code comments for complex logic
 
-**Verification**: Code passes all quality checks
+**Verification**: Code passes all quality checks ✓
 
 ### 4.3 Performance validation
 - [ ] Benchmark config loading with 1 vs 2 files

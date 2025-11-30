@@ -135,7 +135,8 @@ Deno.test("loadConfig should reject invalid JSON", async () => {
   try {
     await assertRejects(
       () => loadConfig(tempFile),
-      SyntaxError,
+      Error,
+      "Failed to load config",
     );
   } finally {
     await Deno.remove(tempFile);
@@ -255,4 +256,326 @@ Deno.test("emptyConfig should return empty configuration", () => {
   const config = emptyConfig();
   assertEquals(Object.keys(config.mcpServers).length, 0);
   assertEquals(config.mcpServers, {});
+});
+
+// Multi-config tests
+Deno.test("loadConfig should parse comma-separated config paths", async () => {
+  // Create two temporary config files
+  const tempFile1 = await Deno.makeTempFile({ suffix: ".json" });
+  const tempFile2 = await Deno.makeTempFile({ suffix: ".json" });
+
+  const config1 = {
+    mcpServers: {
+      "server1": {
+        type: "stdio",
+        command: "node",
+        args: ["server1.js"],
+      },
+    },
+  };
+
+  const config2 = {
+    mcpServers: {
+      "server2": {
+        type: "stdio",
+        command: "node",
+        args: ["server2.js"],
+      },
+    },
+  };
+
+  await Deno.writeTextFile(tempFile1, JSON.stringify(config1));
+  await Deno.writeTextFile(tempFile2, JSON.stringify(config2));
+
+  try {
+    const config = await loadConfig(`${tempFile1},${tempFile2}`);
+    assertExists(config);
+    assertEquals(Object.keys(config.mcpServers).length, 2);
+    assertExists(config.mcpServers["server1"]);
+    assertExists(config.mcpServers["server2"]);
+  } finally {
+    await Deno.remove(tempFile1);
+    await Deno.remove(tempFile2);
+  }
+});
+
+Deno.test("loadConfig should handle array of config paths", async () => {
+  const tempFile1 = await Deno.makeTempFile({ suffix: ".json" });
+  const tempFile2 = await Deno.makeTempFile({ suffix: ".json" });
+
+  const config1 = {
+    mcpServers: {
+      "server1": {
+        type: "stdio",
+        command: "node",
+        args: ["server1.js"],
+      },
+    },
+  };
+
+  const config2 = {
+    mcpServers: {
+      "server2": {
+        type: "stdio",
+        command: "node",
+        args: ["server2.js"],
+      },
+    },
+  };
+
+  await Deno.writeTextFile(tempFile1, JSON.stringify(config1));
+  await Deno.writeTextFile(tempFile2, JSON.stringify(config2));
+
+  try {
+    const config = await loadConfig([tempFile1, tempFile2]);
+    assertExists(config);
+    assertEquals(Object.keys(config.mcpServers).length, 2);
+    assertExists(config.mcpServers["server1"]);
+    assertExists(config.mcpServers["server2"]);
+  } finally {
+    await Deno.remove(tempFile1);
+    await Deno.remove(tempFile2);
+  }
+});
+
+Deno.test("loadConfig should merge configs with later overriding earlier", async () => {
+  const tempFile1 = await Deno.makeTempFile({ suffix: ".json" });
+  const tempFile2 = await Deno.makeTempFile({ suffix: ".json" });
+
+  const config1 = {
+    mcpServers: {
+      "shared-server": {
+        type: "stdio",
+        command: "node",
+        args: ["server1.js"],
+      },
+      "server1": {
+        type: "stdio",
+        command: "node",
+        args: ["unique1.js"],
+      },
+    },
+  };
+
+  const config2 = {
+    mcpServers: {
+      "shared-server": {
+        type: "http",
+        url: "https://example.com/api",
+      },
+      "server2": {
+        type: "stdio",
+        command: "node",
+        args: ["unique2.js"],
+      },
+    },
+  };
+
+  await Deno.writeTextFile(tempFile1, JSON.stringify(config1));
+  await Deno.writeTextFile(tempFile2, JSON.stringify(config2));
+
+  try {
+    const config = await loadConfig(`${tempFile1},${tempFile2}`);
+    assertExists(config);
+    assertEquals(Object.keys(config.mcpServers).length, 3);
+
+    // Later config should override
+    const sharedServer = config.mcpServers["shared-server"];
+    assertEquals(sharedServer.type, "http");
+    if (sharedServer.type === "http") {
+      assertEquals(sharedServer.url, "https://example.com/api");
+    }
+
+    // Unique servers from both configs should exist
+    assertExists(config.mcpServers["server1"]);
+    assertExists(config.mcpServers["server2"]);
+  } finally {
+    await Deno.remove(tempFile1);
+    await Deno.remove(tempFile2);
+  }
+});
+
+Deno.test("loadConfig should skip missing files in multi-config", async () => {
+  const tempFile = await Deno.makeTempFile({ suffix: ".json" });
+  const validConfig = {
+    mcpServers: {
+      "test-server": {
+        type: "stdio",
+        command: "node",
+        args: ["server.js"],
+      },
+    },
+  };
+
+  await Deno.writeTextFile(tempFile, JSON.stringify(validConfig));
+
+  try {
+    const config = await loadConfig(`/nonexistent/file.json,${tempFile}`);
+    assertExists(config);
+    assertEquals(Object.keys(config.mcpServers).length, 1);
+    assertExists(config.mcpServers["test-server"]);
+  } finally {
+    await Deno.remove(tempFile);
+  }
+});
+
+Deno.test("loadConfig should return null when all configs are missing", async () => {
+  const config = await loadConfig("/nonexistent/file1.json,/nonexistent/file2.json");
+  assertEquals(config, null);
+});
+
+Deno.test("loadConfig should expand tilde in config paths", async () => {
+  const homeDir = Deno.env.get("HOME") || Deno.env.get("USERPROFILE");
+  if (!homeDir) {
+    // Skip test if HOME is not set
+    return;
+  }
+
+  const tempFile = await Deno.makeTempFile({ suffix: ".json", dir: homeDir });
+  const fileName = tempFile.split("/").pop() || tempFile.split("\\").pop();
+  const validConfig = {
+    mcpServers: {
+      "test-server": {
+        type: "stdio",
+        command: "node",
+        args: ["server.js"],
+      },
+    },
+  };
+
+  await Deno.writeTextFile(tempFile, JSON.stringify(validConfig));
+
+  try {
+    const config = await loadConfig(`~/${fileName}`);
+    assertExists(config);
+    assertEquals(Object.keys(config.mcpServers).length, 1);
+    assertExists(config.mcpServers["test-server"]);
+  } finally {
+    await Deno.remove(tempFile);
+  }
+});
+
+Deno.test("loadConfig should trim whitespace from comma-separated paths", async () => {
+  const tempFile1 = await Deno.makeTempFile({ suffix: ".json" });
+  const tempFile2 = await Deno.makeTempFile({ suffix: ".json" });
+
+  const config1 = {
+    mcpServers: {
+      "server1": {
+        type: "stdio",
+        command: "node",
+        args: ["server1.js"],
+      },
+    },
+  };
+
+  const config2 = {
+    mcpServers: {
+      "server2": {
+        type: "stdio",
+        command: "node",
+        args: ["server2.js"],
+      },
+    },
+  };
+
+  await Deno.writeTextFile(tempFile1, JSON.stringify(config1));
+  await Deno.writeTextFile(tempFile2, JSON.stringify(config2));
+
+  try {
+    // Test with spaces around commas
+    const config = await loadConfig(`${tempFile1} , ${tempFile2}`);
+    assertExists(config);
+    assertEquals(Object.keys(config.mcpServers).length, 2);
+    assertExists(config.mcpServers["server1"]);
+    assertExists(config.mcpServers["server2"]);
+  } finally {
+    await Deno.remove(tempFile1);
+    await Deno.remove(tempFile2);
+  }
+});
+
+Deno.test("loadConfig should throw on invalid JSON in second config", async () => {
+  const tempFile1 = await Deno.makeTempFile({ suffix: ".json" });
+  const tempFile2 = await Deno.makeTempFile({ suffix: ".json" });
+
+  const validConfig = {
+    mcpServers: {
+      "server1": {
+        type: "stdio",
+        command: "node",
+        args: ["server1.js"],
+      },
+    },
+  };
+
+  await Deno.writeTextFile(tempFile1, JSON.stringify(validConfig));
+  await Deno.writeTextFile(tempFile2, "{ invalid json }");
+
+  try {
+    await assertRejects(
+      () => loadConfig(`${tempFile1},${tempFile2}`),
+      Error,
+      "Failed to load config",
+    );
+  } finally {
+    await Deno.remove(tempFile1);
+    await Deno.remove(tempFile2);
+  }
+});
+
+Deno.test("loadConfig should preserve environment variable substitution in merged configs", async () => {
+  Deno.env.set("TEST_TOKEN_1", "token1");
+  Deno.env.set("TEST_TOKEN_2", "token2");
+
+  const tempFile1 = await Deno.makeTempFile({ suffix: ".json" });
+  const tempFile2 = await Deno.makeTempFile({ suffix: ".json" });
+
+  const config1 = {
+    mcpServers: {
+      "server1": {
+        type: "http",
+        url: "https://example1.com",
+        headers: {
+          Authorization: "Bearer ${TEST_TOKEN_1}",
+        },
+      },
+    },
+  };
+
+  const config2 = {
+    mcpServers: {
+      "server2": {
+        type: "http",
+        url: "https://example2.com",
+        headers: {
+          Authorization: "Bearer ${TEST_TOKEN_2}",
+        },
+      },
+    },
+  };
+
+  await Deno.writeTextFile(tempFile1, JSON.stringify(config1));
+  await Deno.writeTextFile(tempFile2, JSON.stringify(config2));
+
+  try {
+    const config = await loadConfig(`${tempFile1},${tempFile2}`);
+    assertExists(config);
+
+    const server1 = config.mcpServers["server1"];
+    const server2 = config.mcpServers["server2"];
+
+    if (server1.type === "http") {
+      assertEquals(server1.headers?.Authorization, "Bearer token1");
+    }
+
+    if (server2.type === "http") {
+      assertEquals(server2.headers?.Authorization, "Bearer token2");
+    }
+  } finally {
+    await Deno.remove(tempFile1);
+    await Deno.remove(tempFile2);
+    Deno.env.delete("TEST_TOKEN_1");
+    Deno.env.delete("TEST_TOKEN_2");
+  }
 });
