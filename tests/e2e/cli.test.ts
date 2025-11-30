@@ -440,10 +440,24 @@ console.log("sse:", JSON.stringify(reverseResult));
       );
     });
 
-    // OAuth2-specific tests
-    await t.step("CLI auth should list OAuth servers with status", async () => {
-      await using oauthServer = await startOAuthServer();
+    await t.step("CLI auth should reject stdio servers", async () => {
+      const result = await runCli(["auth", "stdio-test-server", "--config", gateway.configFile]);
 
+      assertEquals(result.success, false);
+      assertStringIncludes(result.stderr, "stdio server");
+      assertStringIncludes(result.stderr, "OAuth2 is only supported for HTTP/SSE");
+    });
+  },
+});
+
+Deno.test({
+  name: "OAuth unauthenticated tests",
+  sanitizeResources: false,
+  fn: async (t) => {
+    // Start OAuth server
+    await using oauthServer = await startOAuthServer();
+
+    await t.step("CLI auth should list OAuth servers with status", async () => {
       const result = await runCli(["auth", "--config", oauthServer.configFile]);
 
       assertEquals(result.success, true);
@@ -455,231 +469,204 @@ console.log("sse:", JSON.stringify(reverseResult));
       assertStringIncludes(result.stdout, "Run 'toolscript auth <server-name>' to authenticate");
     });
 
-    await t.step("CLI auth should reject stdio servers", async () => {
-      const result = await runCli(["auth", "stdio-test-server", "--config", gateway.configFile]);
+    await t.step("Unauthenticated tool calls should fail", async () => {
+      // Create config pointing to OAuth server
+      const configFile = await Deno.makeTempFile({ suffix: ".json" });
+      const config = {
+        mcpServers: {
+          "oauth-auth-code": {
+            type: "http",
+            url: `http://localhost:${oauthServer.port}/mcp`,
+          },
+        },
+      };
+      await Deno.writeTextFile(configFile, JSON.stringify(config, null, 2));
 
-      assertEquals(result.success, false);
-      assertStringIncludes(result.stderr, "stdio server");
-      assertStringIncludes(result.stderr, "OAuth2 is only supported for HTTP/SSE");
+      try {
+        // Start gateway without OAuth credentials in HOME
+        await using gateway = await startTestGateway({ configFile });
+
+        // Try to call a protected tool without authentication credentials
+        const unauthCallCode = `
+import { tools } from "toolscript";
+const result = await tools.oauthAuthCode.protectedEcho({ message: "test" });
+console.log(JSON.stringify(result));
+        `.trim();
+
+        const unauthCallResult = await runCli([
+          "exec",
+          unauthCallCode,
+          "--gateway-url",
+          gateway.url,
+        ]);
+
+        // Should fail because no authentication credentials are present
+        assertEquals(
+          unauthCallResult.success,
+          false,
+          "Should fail to call tools without authentication",
+        );
+      } finally {
+        await Deno.remove(configFile);
+      }
     });
 
-    await t.step(
-      "OAuth Authorization Code flow - complete auth flow, store credentials, gateway uses them",
-      async () => {
-        await using oauthServer = await startOAuthServer();
-        const gatewayPort = await getRandomPort();
+    await t.step("Direct MCP endpoint should reject requests without token", async () => {
+      const mcpResponse = await fetch(`http://localhost:${oauthServer.port}/mcp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // No Authorization header
+        },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          method: "tools/call",
+          params: {
+            name: "protected_echo",
+            arguments: { message: "unauthorized test" },
+          },
+          id: 1,
+        }),
+      });
 
-        // Create a temp HOME directory for this test
-        const tempHomeDir = await Deno.makeTempDir();
+      // Should be rejected with 401 Unauthorized
+      assertEquals(mcpResponse.status, 401, "Should reject request without auth token");
 
-        try {
-          // Step 1: Simulate OAuth Authorization Code flow to get credentials
-          const discoveryResponse = await fetch(
-            `http://localhost:${oauthServer.port}/.well-known/oauth-authorization-server`,
-          );
-          const discovery = await discoveryResponse.json();
+      const errorData = await mcpResponse.json();
+      assertStringIncludes(JSON.stringify(errorData), "unauthorized");
+    });
+  },
+});
 
-          // Dynamic client registration
-          const registerResponse = await fetch(discovery.registration_endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              client_name: "toolscript-test",
-              redirect_uris: ["http://localhost:8765/oauth/callback"],
-            }),
-          });
-          const clientData = await registerResponse.json();
+Deno.test({
+  name: "OAuth - authenticated requests should work with stored credentials",
+  sanitizeResources: false,
+  fn: async () => {
+    // Create a temp HOME directory for OAuth storage
+    const tempHomeDir = await Deno.makeTempDir();
 
-          // Get authorization code (simulating user authorization)
-          const authUrl = new URL(discovery.authorization_endpoint);
-          authUrl.searchParams.set("client_id", clientData.client_id);
-          authUrl.searchParams.set("redirect_uri", "http://localhost:8765/oauth/callback");
-          authUrl.searchParams.set("state", "test-state");
-          authUrl.searchParams.set("response_type", "code");
+    try {
+      // Start just the OAuth server to get credentials from
+      await using oauthServer = await startOAuthServer();
 
-          const authResponse = await fetch(authUrl.toString(), { redirect: "manual" });
-          const redirectLocation = authResponse.headers.get("location");
-          const redirectUrl = new URL(redirectLocation!);
-          const authCode = redirectUrl.searchParams.get("code")!;
+      // Simulate OAuth Authorization Code flow to get credentials
+      const discoveryResponse = await fetch(
+        `http://localhost:${oauthServer.port}/.well-known/oauth-authorization-server`,
+      );
+      const discovery = await discoveryResponse.json();
 
-          // Exchange code for tokens
-          const tokenResponse = await fetch(discovery.token_endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              grant_type: "authorization_code",
-              code: authCode,
-              client_id: clientData.client_id,
-            }),
-          });
-          const tokenData = await tokenResponse.json();
+      // Dynamic client registration
+      const registerResponse = await fetch(discovery.registration_endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_name: "toolscript-test",
+          redirect_uris: ["http://localhost:8765/oauth/callback"],
+        }),
+      });
+      const clientData = await registerResponse.json();
 
-          // Step 2: Store OAuth data in the location where gateway will look for it
-          // We need to store it in tempHomeDir/.toolscript/oauth/
-          const { FileOAuthStorage } = await import("../../src/oauth/storage.ts");
-          const oauthStorageDir = `${tempHomeDir}/.toolscript/oauth`;
-          const storage = new FileOAuthStorage(oauthStorageDir);
+      // Get authorization code (simulating user authorization)
+      const authUrl = new URL(discovery.authorization_endpoint);
+      authUrl.searchParams.set("client_id", clientData.client_id);
+      authUrl.searchParams.set("redirect_uri", "http://localhost:8765/oauth/callback");
+      authUrl.searchParams.set("state", "test-state");
+      authUrl.searchParams.set("response_type", "code");
 
-          await storage.saveOAuthData("oauth-auth-code", {
-            clientInformation: {
-              client_id: clientData.client_id,
-              client_secret: clientData.client_secret,
-            },
-            tokens: {
-              access_token: tokenData.access_token,
-              token_type: tokenData.token_type,
-              expires_in: tokenData.expires_in,
-            },
-          });
+      const authResponse = await fetch(authUrl.toString(), { redirect: "manual" });
+      const redirectLocation = authResponse.headers.get("location");
+      const redirectUrl = new URL(redirectLocation!);
+      const authCode = redirectUrl.searchParams.get("code")!;
 
-          // Step 3: Start gateway with OAuth server configured
-          // Gateway should use the stored credentials
-          const gatewayConfigFile = await Deno.makeTempFile({ suffix: ".json" });
-          const gatewayConfig = {
-            mcpServers: {
-              "oauth-auth-code": {
-                type: "http",
-                url: `http://localhost:${oauthServer.port}/mcp`,
-                oauth: {
-                  clientId: "test-client-id", // Authorization code flow (no secret)
-                },
-              },
-            },
-          };
-          await Deno.writeTextFile(gatewayConfigFile, JSON.stringify(gatewayConfig, null, 2));
+      // Exchange code for tokens
+      const tokenResponse = await fetch(discovery.token_endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          grant_type: "authorization_code",
+          code: authCode,
+          client_id: clientData.client_id,
+        }),
+      });
+      const tokenData = await tokenResponse.json();
 
-          const gatewayCmd = new Deno.Command("deno", {
-            args: [
-              "run",
-              "--allow-net",
-              "--allow-read",
-              "--allow-write",
-              "--allow-env",
-              "--allow-run",
-              "--allow-sys",
-              "src/cli/main.ts",
-              "gateway",
-              "start",
-              "--port",
-              `${gatewayPort}`,
-              "--config",
-              gatewayConfigFile,
-            ],
-            stdout: "piped",
-            stderr: "piped",
-            env: {
-              HOME: tempHomeDir, // Point to our temp HOME with OAuth storage
-            },
-          });
+      // Store OAuth data in tempHomeDir/.toolscript/oauth/
+      const { FileOAuthStorage } = await import("../../src/oauth/storage.ts");
+      const oauthStorageDir = `${tempHomeDir}/.toolscript/oauth`;
+      const storage = new FileOAuthStorage(oauthStorageDir);
 
-          const gatewayProcess = gatewayCmd.spawn();
+      await storage.saveOAuthData("oauth-auth-code", {
+        clientInformation: {
+          client_id: clientData.client_id,
+          client_secret: clientData.client_secret,
+        },
+        tokens: {
+          access_token: tokenData.access_token,
+          token_type: tokenData.token_type,
+          expires_in: tokenData.expires_in,
+        },
+      });
 
-          try {
-            // Wait for gateway to be ready
-            let gatewayReady = false;
-            for (let i = 0; i < 30; i++) {
-              try {
-                const healthResponse = await fetch(`http://localhost:${gatewayPort}/health`, {
-                  signal: AbortSignal.timeout(1000),
-                });
-                if (healthResponse.ok) {
-                  gatewayReady = true;
-                  break;
-                }
-              } catch {
-                // Not ready yet
-              }
-              await new Promise((resolve) => setTimeout(resolve, 200));
-            }
+      // Create a config that points to the OAuth server we just set up
+      const gatewayConfigFile = await Deno.makeTempFile({ suffix: ".json" });
+      const gatewayConfig = {
+        mcpServers: {
+          "oauth-auth-code": {
+            type: "http",
+            url: `http://localhost:${oauthServer.port}/mcp`,
+          },
+        },
+      };
+      await Deno.writeTextFile(gatewayConfigFile, JSON.stringify(gatewayConfig, null, 2));
 
-            assertEquals(gatewayReady, true, "Gateway should start with stored OAuth credentials");
+      try {
+        // Start gateway with custom HOME env var and config file
+        await using gateway = await startTestGateway({
+          env: { HOME: tempHomeDir },
+          configFile: gatewayConfigFile,
+        });
 
-            // Verify gateway can list tools from OAuth server
-            const listToolsResult = await runCli([
-              "list-tools",
-              "oauth-auth-code",
-              "--gateway-url",
-              `http://localhost:${gatewayPort}`,
-            ]);
+        // Verify gateway can list tools from OAuth server
+        const listToolsResult = await runCli([
+          "list-tools",
+          "oauth-auth-code",
+          "--gateway-url",
+          gateway.url,
+        ]);
 
-            if (!listToolsResult.success) {
-              console.error("List tools failed. Stdout:", listToolsResult.stdout);
-              console.error("Stderr:", listToolsResult.stderr);
-            }
+        assertEquals(
+          listToolsResult.success,
+          true,
+          "Gateway should list tools from OAuth server",
+        );
+        assertStringIncludes(listToolsResult.stdout, "protected_echo");
 
-            assertEquals(
-              listToolsResult.success,
-              true,
-              "Gateway should list tools from OAuth server",
-            );
-            assertStringIncludes(listToolsResult.stdout, "protected_echo");
-
-            // Step 4: Call a tool through the gateway - it should use stored credentials
-            const code = `
+        // Call a tool through the gateway - it should use stored credentials
+        const code = `
 import { tools } from "toolscript";
 const result = await tools.oauthAuthCode.protectedEcho({ message: "auth code via gateway" });
 console.log(JSON.stringify(result));
         `.trim();
 
-            const result = await runCli([
-              "exec",
-              code,
-              "--gateway-url",
-              `http://localhost:${gatewayPort}`,
-            ]);
+        const result = await runCli([
+          "exec",
+          code,
+          "--gateway-url",
+          gateway.url,
+        ]);
 
-            // Should successfully call the protected tool using stored credentials
-            if (!result.success) {
-              console.error("Tool call failed. Stdout:", result.stdout);
-              console.error("Stderr:", result.stderr);
-            }
-            assertEquals(
-              result.success,
-              true,
-              "Should execute tool using stored OAuth credentials",
-            );
-            assertStringIncludes(result.stdout, "Protected echo: auth code via gateway");
-          } finally {
-            gatewayProcess.kill("SIGTERM");
-            await gatewayProcess.status;
-            await Deno.remove(gatewayConfigFile);
-          }
-        } finally {
-          await Deno.remove(tempHomeDir, { recursive: true });
-        }
-      },
-    );
-
-    await t.step(
-      "OAuth - protected endpoint should reject requests without valid token",
-      async () => {
-        await using oauthServer = await startOAuthServer();
-
-        // Try to call a protected tool without authentication
-        const mcpResponse = await fetch(`http://localhost:${oauthServer.port}/mcp`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            // No Authorization header
-          },
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            method: "tools/call",
-            params: {
-              name: "protected_echo",
-              arguments: { message: "unauthorized test" },
-            },
-            id: 1,
-          }),
-        });
-
-        // Should be rejected with 401 Unauthorized
-        assertEquals(mcpResponse.status, 401, "Should reject request without auth token");
-
-        const errorData = await mcpResponse.json();
-        assertStringIncludes(JSON.stringify(errorData), "unauthorized");
-      },
-    );
+        assertEquals(
+          result.success,
+          true,
+          "Should execute tool using stored OAuth credentials",
+        );
+        assertStringIncludes(result.stdout, "Protected echo: auth code via gateway");
+      } finally {
+        await Deno.remove(gatewayConfigFile);
+      }
+    } finally {
+      await Deno.remove(tempHomeDir, { recursive: true });
+    }
   },
 });
 

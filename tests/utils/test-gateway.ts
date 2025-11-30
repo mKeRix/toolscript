@@ -22,12 +22,99 @@ export interface OAuthServerInstance extends AsyncDisposable {
   cleanup: () => Promise<void>;
 }
 
+export interface StartTestGatewayOptions {
+  /** Optional environment variables to pass to the gateway process */
+  env?: Record<string, string>;
+  /** Optional config file path to use instead of creating a new one with test servers */
+  configFile?: string;
+}
+
 /**
  * Start a test gateway instance with an MCP server configured
  */
-export async function startTestGateway(): Promise<TestGatewayInstance> {
+export async function startTestGateway(
+  options?: StartTestGatewayOptions,
+): Promise<TestGatewayInstance> {
   const port = await getRandomPort();
   const hostname = "localhost";
+
+  // If a custom config is provided, skip starting test servers
+  if (options?.configFile) {
+    const cmd = new Deno.Command("deno", {
+      args: [
+        "run",
+        "--unstable-webgpu",
+        "--allow-net",
+        "--allow-read",
+        "--allow-write",
+        "--allow-env",
+        "--allow-run",
+        "--allow-sys",
+        "--allow-ffi",
+        "src/cli/main.ts",
+        "gateway",
+        "start",
+        "--port",
+        `${port}`,
+        "--hostname",
+        hostname,
+        "--config",
+        options.configFile,
+      ],
+      stdout: "piped",
+      stderr: "piped",
+      env: options?.env,
+    });
+
+    const process = cmd.spawn();
+    const url = `http://${hostname}:${port}`;
+
+    // Wait for gateway to be ready
+    let ready = false;
+    for (let i = 0; i < 100; i++) {
+      try {
+        const response = await fetch(`${url}/health`, { signal: AbortSignal.timeout(2000) });
+        if (response.ok) {
+          const health = await response.json();
+          if (health.status === "ok" && health.search?.ready) {
+            ready = true;
+            break;
+          }
+        }
+      } catch {
+        // Not ready yet
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
+    if (!ready) {
+      try {
+        process.kill("SIGTERM");
+        await process.status;
+      } catch {
+        // Already exited
+      }
+      throw new Error("Gateway with custom config failed to start");
+    }
+
+    const cleanup = async () => {
+      try {
+        process.kill("SIGTERM");
+        await process.status;
+      } catch {
+        // Already exited
+      }
+    };
+
+    return {
+      port,
+      url,
+      process,
+      configFile: options.configFile,
+      cleanup,
+      [Symbol.asyncDispose]: cleanup,
+    };
+  }
 
   // Start HTTP test server
   const httpPort = await getRandomPort();
@@ -145,7 +232,7 @@ export async function startTestGateway(): Promise<TestGatewayInstance> {
     throw new Error("SSE test server failed to start");
   }
 
-  // Create a temporary config file for the gateway with all three transport types
+  // Create a temporary config file for the gateway with test servers
   const tempConfigFile = await Deno.makeTempFile({ suffix: ".json" });
   const config = {
     mcpServers: {
@@ -194,6 +281,7 @@ export async function startTestGateway(): Promise<TestGatewayInstance> {
     ],
     stdout: "piped",
     stderr: "piped",
+    env: options?.env,
   });
 
   const process = cmd.spawn();
