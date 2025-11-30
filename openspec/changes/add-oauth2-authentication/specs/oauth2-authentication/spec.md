@@ -54,7 +54,7 @@ The system SHALL support dynamic client registration (RFC 7591) as the primary m
 
 #### Scenario: Save dynamically registered client info
 - **WHEN** dynamic registration succeeds
-- **THEN** system saves client_id and client_secret (if provided) to file-based storage
+- **THEN** system saves client_id to file-based storage
 
 #### Scenario: Reuse dynamically registered client
 - **WHEN** stored client registration exists in storage backend

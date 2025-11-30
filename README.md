@@ -237,7 +237,7 @@ Use `${VAR}` or `${VAR:-default}` syntax for environment variable substitution.
 
 ## OAuth2 Authentication
 
-Toolscript supports OAuth2 authentication for HTTP and SSE MCP servers using the Authorization Code and Client Credentials flows.
+Toolscript supports OAuth2 authentication for HTTP and SSE MCP servers using the Authorization Code flow.
 
 ### Quick Start
 
@@ -276,32 +276,12 @@ toolscript gateway start
 # Gateway automatically uses stored OAuth credentials
 ```
 
-### Authentication Flows
+### Authentication Flow
 
 **Authorization Code** (interactive, user-facing):
-- Used when `oauth.clientSecret` is NOT provided
 - Requires `toolscript auth <server>` command
 - Opens browser for user authorization
-
-**Client Credentials** (automatic, service-to-service):
-- Used when `oauth.clientSecret` IS provided
-- Authenticates automatically when gateway starts
-- No manual auth command needed
-
-```json
-{
-  "mcpServers": {
-    "api-server": {
-      "type": "http",
-      "url": "https://api.example.com/mcp",
-      "oauth": {
-        "clientId": "${API_CLIENT_ID}",
-        "clientSecret": "${API_CLIENT_SECRET}"
-      }
-    }
-  }
-}
-```
+- Tokens are automatically refreshed
 
 ### Checking Auth Status
 
@@ -312,10 +292,9 @@ toolscript auth
 # Example output:
 # OAuth2 Servers:
 #
-# Status  Server   Flow Type            Authentication
-# ✓       github   authorization_code   authenticated
-# ✗       gitlab   authorization_code   not authenticated
-# ✓       api      client_credentials   authenticated
+# Status  Server   Authentication
+# ✓       github   authenticated
+# ✗       gitlab   not authenticated
 ```
 
 ### Storage
@@ -328,8 +307,7 @@ OAuth credentials are stored in:
 ### Requirements
 
 - OAuth2-protected MCP servers must support OAuth discovery
-- For Authorization Code flow: `clientId` required
-- For Client Credentials flow: `clientId` + `clientSecret` required
+- `clientId` required in OAuth configuration
 
 ## Examples
 

@@ -27,14 +27,6 @@ The system SHALL manage gateway startup, operation, and shutdown.
 - **WHEN** gateway starts with Authorization Code server without valid tokens
 - **THEN** gateway logs warning indicating auth is required and shows `toolscript auth` command
 
-#### Scenario: Automatic authentication for Client Credentials servers
-- **WHEN** gateway starts with Client Credentials server
-- **THEN** system automatically authenticates using client credentials before reporting gateway ready
-
-#### Scenario: Client Credentials auth failure is non-fatal
-- **WHEN** Client Credentials authentication fails at startup
-- **THEN** gateway marks server as failed but continues startup for other servers
-
 ## ADDED Requirements
 
 ### Requirement: OAuth2 Callback Endpoint
@@ -93,7 +85,7 @@ The gateway SHALL track OAuth2 authentication state per server.
 
 #### Scenario: OAuth2 status: pending
 - **WHEN** server requires auth but has no tokens
-- **THEN** oauth_status is "pending_authorization" for authorization_code, "pending_authentication" for client_credentials during initial auth
+- **THEN** oauth_status is "pending_authorization"
 
 #### Scenario: OAuth2 status: failed
 - **WHEN** OAuth2 authentication failed
@@ -109,10 +101,6 @@ The gateway SHALL provide clear error responses for OAuth2 authentication failur
 #### Scenario: Tool call to unauthenticated server fails
 - **WHEN** tool is called on server requiring auth without valid tokens
 - **THEN** request returns 401 with error indicating auth required and `toolscript auth` command
-
-#### Scenario: Client Credentials auth failure reported clearly
-- **WHEN** Client Credentials authentication fails
-- **THEN** error includes details about credential validity and token endpoint
 
 #### Scenario: Token refresh failure handling
 - **WHEN** token refresh fails for any reason

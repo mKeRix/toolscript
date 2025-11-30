@@ -24,9 +24,6 @@ The system SHALL provide a standalone CLI command for OAuth2 authorization.
 - **WHEN** user runs `toolscript auth` on server without oauth field
 - **THEN** command performs OAuth discovery and attempts dynamic client registration
 
-#### Scenario: Auth command fails for Client Credentials servers
-- **WHEN** user runs `toolscript auth` on server with client_credentials flow
-- **THEN** command fails with message indicating authentication is automatic for this server
 
 #### Scenario: Auth command starts temporary callback server
 - **WHEN** auth command initiates Authorization Code flow
@@ -120,10 +117,6 @@ The system SHALL provide help information for auth command.
 - **WHEN** listing servers with `toolscript auth`
 - **AND** server has no stored tokens or expired tokens
 - **THEN** status displays as "not authenticated"
-
-#### Scenario: Auth status shows flow type
-- **WHEN** listing servers with `toolscript auth`
-- **THEN** each server shows its OAuth2 flow type (authorization_code or client_credentials)
 
 ### Requirement: Auth Command Output
 The system SHALL provide clear output during auth command execution.

@@ -10,7 +10,6 @@
 - [x] Task 2.1: Storage approach selected (file-based with secure permissions)
 - [x] Task 2.2: OAuth data storage implementation
 - [x] Task 3.1: Authorization Code provider
-- [x] Task 3.2: Client Credentials provider
 - [x] Task 3.3: Provider factory
 - [x] Task 4.1: McpClient OAuth integration
 - [x] Task 5.1: Standalone `toolscript auth` command
@@ -48,7 +47,6 @@ This implementation leverages MCP SDK's built-in OAuth2 support and OAuth discov
   ```typescript
   interface OAuth2Config {
     clientId: string;
-    clientSecret?: string;  // presence determines flow type
     scopes?: string[];
   }
   ```
@@ -59,8 +57,8 @@ This implementation leverages MCP SDK's built-in OAuth2 support and OAuth discov
 ### Task 1.2: Add OAuth2 Configuration Schema Validation
 **File**: `src/config/schema.ts`
 - Add Zod schema for `OAuth2Config` requiring `clientId`
-- Make `clientSecret` and `scopes` optional
-- Reject `authorizationUrl`, `tokenUrl`, `redirectUri`, `flow` fields if present
+- Make `scopes` optional
+- Reject `authorizationUrl`, `tokenUrl`, `redirectUri`, `flow`, `clientSecret` fields if present
 - Add to `ServerConfigSchema`
 
 **Validation**: Unit tests for valid configs and rejection of manual endpoints
@@ -68,7 +66,6 @@ This implementation leverages MCP SDK's built-in OAuth2 support and OAuth discov
 ### Task 1.3: Update Configuration Examples
 **File**: `docs/oauth2.md` (new file)
 - Authorization Code example (GitHub): only `clientId`
-- Client Credentials example (internal API): `clientId` + `clientSecret`
 - Environment variable usage for secrets
 - Troubleshooting section
 
@@ -91,7 +88,6 @@ This implementation leverages MCP SDK's built-in OAuth2 support and OAuth discov
   interface OAuthData {
     client?: {
       client_id: string;
-      client_secret?: string;
       registration_source: "dynamic" | "config";
     };
     tokens?: OAuthTokens;
@@ -126,24 +122,13 @@ This implementation leverages MCP SDK's built-in OAuth2 support and OAuth discov
 
 **Validation**: Unit tests for all interface methods
 
-### Task 3.2: Extend Client Credentials Provider with Persistence
-**File**: `src/oauth/providers/client-credentials-provider.ts` (new file)
-- Extend MCP SDK's `ClientCredentialsProvider`
-- Add `TokenStorage` to constructor
-- Override `tokens()` to load from storage
-- Override `saveTokens()` to persist to storage
-- Delegate all OAuth logic to parent class
-
-**Validation**: Unit tests verify persistence
-
 ### Task 3.3: Create Provider Factory
 **File**: `src/oauth/providers/index.ts` (new file)
 - `createOAuthProvider(config: OAuth2Config, storage: TokenStorage, serverName: string, gatewayPort: number)`
-- Infer flow: `config.clientSecret ? client_credentials : authorization_code`
-- Return appropriate provider instance
-- Log inferred flow type
+- Create Authorization Code provider instance
+- Log flow type
 
-**Validation**: Unit tests for both flows
+**Validation**: Unit tests for Authorization Code flow
 
 ## Phase 4: Gateway Integration
 
@@ -158,36 +143,15 @@ This implementation leverages MCP SDK's built-in OAuth2 support and OAuth discov
 
 **Validation**: Integration tests with mock OAuth server
 
-### Task 4.2: Add OAuth2 Callback Endpoint to Gateway
-**File**: `src/gateway/server.ts`
-- Add `GET /oauth/callback` route to Hono app
-- Extract `code` and `state` from query params
-- Look up pending auth session by state
-- Call MCP SDK's auth completion method with code
-- Provider's `saveTokens()` is called automatically
-- Return HTML success/error page
-- Track pending auth sessions (state → server name mapping)
-- Timeout pending sessions after 5 minutes
-
-**Validation**: Integration test simulates OAuth callback
-
-### Task 4.3: Add OAuth2 State Tracking in Aggregator
-**File**: `src/gateway/aggregator.ts`
-- Add `oauthStatus` field to server state
-- Track: `authenticated | pending_authorization | authentication_failed`
-- Expose in `getServers()` response
-- Update status when provider callbacks occur
-
-**Validation**: Test `/servers` endpoint includes `oauth_status`
 
 ## Phase 5: CLI Auth Command
 
 ### Task 5.1: Implement Standalone Auth Command
 **File**: `src/cli/commands/auth.ts` (new file)
 - Parse `<server-name>` argument (optional)
-- **If no server-name**: List all OAuth2 servers with authentication status and flow type
+- **If no server-name**: List all OAuth2 servers with authentication status
   - Check storage backend for each server
-  - Display: server name, flow type, auth status (authenticated/not authenticated)
+  - Display: server name, auth status (authenticated/not authenticated)
 - **If server-name provided**:
   - Read server config from `.toolscript.json`
   - Perform OAuth discovery
@@ -203,7 +167,6 @@ This implementation leverages MCP SDK's built-in OAuth2 support and OAuth discov
   - Display success message: "✓ Authorization successful! Credentials stored securely."
   - Timeout after 5 minutes
   - Handle Ctrl+C gracefully
-- Validate flow is `authorization_code` (reject `client_credentials` with helpful error)
 - Command runs independently without gateway running
 
 **Validation**: E2E test with mock OAuth server
@@ -259,7 +222,6 @@ This implementation leverages MCP SDK's built-in OAuth2 support and OAuth discov
 ### Task 7.2: Integration Tests
 **Files**: `tests/integration/oauth2.test.ts`
 - Full Authorization Code flow with mock OAuth server
-- Client Credentials flow with mock server
 - Token persistence and reload
 - Callback handling
 - Error scenarios
@@ -270,7 +232,6 @@ This implementation leverages MCP SDK's built-in OAuth2 support and OAuth discov
 **Files**: `tests/e2e/oauth2.test.ts`
 - `toolscript auth` command end-to-end
 - Token reuse across gateway restarts
-- Both flows tested
 
 **Validation**: E2E tests pass
 

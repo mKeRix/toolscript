@@ -22,7 +22,6 @@ OAuth2 authentication will be implemented at the **gateway layer** in the MCP cl
 │ ┌─────────────────────────────────────────────────────────┐ │
 │ │ OAuth2 Client Providers                                 │ │
 │ │ - PersistentOAuthProvider (Authorization Code)          │ │
-│ │ - PersistentClientCredentialsProvider                   │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │ ┌─────────────────────────────────────────────────────────┐ │
 │ │ Token Storage                                            │ │
@@ -85,31 +84,6 @@ User runs `toolscript auth github` which:
 
 Used when server doesn't support dynamic registration or user prefers pre-registered client.
 
-### Client Credentials (Confidential Client)
-```json
-{
-  "mcpServers": {
-    "internal-api": {
-      "type": "http",
-      "url": "https://internal.example.com/mcp",
-      "oauth": {
-        "clientId": "${API_CLIENT_ID}",
-        "clientSecret": "${API_CLIENT_SECRET}"
-      }
-    }
-  }
-}
-```
-
-Gateway automatically authenticates on startup using client credentials.
-
-## Flow Type Inference
-
-Flow type determined by:
-1. **Client Credentials**: `oauth.clientSecret` is present
-2. **Authorization Code**: `oauth.clientSecret` is absent OR no oauth field at all
-
-No explicit `flow` field needed.
 
 ## OAuth2 Data Storage Strategy
 
@@ -136,7 +110,6 @@ OAuth data is stored as JSON with the following structure:
 {
   "client": {
     "client_id": "...",
-    "client_secret": "...",  // only for confidential clients
     "registration_source": "dynamic" | "config"
   },
   "tokens": {
@@ -172,12 +145,6 @@ Wraps or extends MCP SDK's built-in provider with:
 - `saveTokens()`: Persist to keychain/file storage
 - Delegates OAuth flow logic to MCP SDK
 - PKCE handled automatically by MCP SDK
-
-### PersistentClientCredentialsProvider
-Extends MCP SDK's `ClientCredentialsProvider` with:
-- Token persistence via keychain/file
-- Delegates to SDK for token requests and refresh
-- No custom OAuth logic needed
 
 ## Standalone Auth Command Design
 
@@ -272,9 +239,8 @@ Since callback server port is dynamic:
 $ toolscript auth
 OAuth2 Servers:
 
-✓ github (authorization_code) - authenticated
-✗ gitlab (authorization_code) - not authenticated
-✓ internal-api (client_credentials) - authenticated
+✓ github - authenticated
+✗ gitlab - not authenticated
 
 Run 'toolscript auth <server-name>' to authenticate a server.
 ```
@@ -343,15 +309,6 @@ Starting callback server on port 8765...
 ✓ Authorization successful!
 ```
 
-### Client Credentials (Silent, Automatic)
-```bash
-$ toolscript gateway
-Starting gateway server...
-✓ Authenticated to 'internal-api' via client_credentials
-Gateway server listening on http://localhost:3000
-```
-
-No `toolscript auth` command needed for client_credentials - happens automatically.
 
 ## Integration Points
 
@@ -389,7 +346,6 @@ No `toolscript auth` command needed for client_credentials - happens automatical
 ### E2E Tests
 - Connect to real OAuth2-protected MCP server (test account)
 - Verify token reuse across gateway restarts
-- Test both Authorization Code and Client Credentials flows
 
 ## Migration Path
 
