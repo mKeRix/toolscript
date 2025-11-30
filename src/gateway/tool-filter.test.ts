@@ -15,7 +15,7 @@ Deno.test("shouldIncludeTool should include all tools when no filters", () => {
 
 Deno.test("shouldIncludeTool should match exact tool names in includeTools", () => {
   const filters: ToolFilters = {
-    includeTools: ["create_issue", "list_repos"],
+    includeTools: new Set(["create_issue", "list_repos"]),
   };
 
   assertEquals(shouldIncludeTool("create_issue", filters), true);
@@ -26,7 +26,7 @@ Deno.test("shouldIncludeTool should match exact tool names in includeTools", () 
 
 Deno.test("shouldIncludeTool should match multiple exact tool names in includeTools", () => {
   const filters: ToolFilters = {
-    includeTools: ["get_issue", "get_repo", "list_repos"],
+    includeTools: new Set(["get_issue", "get_repo", "list_repos"]),
   };
 
   assertEquals(shouldIncludeTool("get_issue", filters), true);
@@ -38,7 +38,7 @@ Deno.test("shouldIncludeTool should match multiple exact tool names in includeTo
 
 Deno.test("shouldIncludeTool should exclude exact tool names in excludeTools", () => {
   const filters: ToolFilters = {
-    excludeTools: ["delete_repo", "remove_file"],
+    excludeTools: new Set(["delete_repo", "remove_file"]),
   };
 
   assertEquals(shouldIncludeTool("get_issue", filters), true);
@@ -49,7 +49,7 @@ Deno.test("shouldIncludeTool should exclude exact tool names in excludeTools", (
 
 Deno.test("shouldIncludeTool should exclude multiple exact tool names in excludeTools", () => {
   const filters: ToolFilters = {
-    excludeTools: ["delete_repo", "delete_issue", "remove_file"],
+    excludeTools: new Set(["delete_repo", "delete_issue", "remove_file"]),
   };
 
   assertEquals(shouldIncludeTool("get_issue", filters), true);
@@ -61,8 +61,8 @@ Deno.test("shouldIncludeTool should exclude multiple exact tool names in exclude
 
 Deno.test("shouldIncludeTool should apply both include and exclude filters", () => {
   const filters: ToolFilters = {
-    includeTools: ["get_issue", "create_issue", "create_repo", "delete_issue"],
-    excludeTools: ["delete_issue"],
+    includeTools: new Set(["get_issue", "create_issue", "create_repo", "delete_issue"]),
+    excludeTools: new Set(["delete_issue"]),
   };
 
   // In include list, not excluded
@@ -80,8 +80,8 @@ Deno.test("shouldIncludeTool should apply both include and exclude filters", () 
 
 Deno.test("shouldIncludeTool should work with include filters", () => {
   const filters: ToolFilters = {
-    includeTools: ["get_user", "get_public_data"],
-    excludeTools: ["get_private_key"],
+    includeTools: new Set(["get_user", "get_public_data"]),
+    excludeTools: new Set(["get_private_key"]),
   };
 
   assertEquals(shouldIncludeTool("get_user", filters), true);
@@ -92,7 +92,7 @@ Deno.test("shouldIncludeTool should work with include filters", () => {
 
 Deno.test("shouldIncludeTool should work with exclude filters", () => {
   const filters: ToolFilters = {
-    excludeTools: ["delete_dangerous", "get_internal"],
+    excludeTools: new Set(["delete_dangerous", "get_internal"]),
   };
 
   assertEquals(shouldIncludeTool("get_user", filters), true);
@@ -101,18 +101,18 @@ Deno.test("shouldIncludeTool should work with exclude filters", () => {
   assertEquals(shouldIncludeTool("get_internal", filters), false);
 });
 
-Deno.test("shouldIncludeTool should handle empty includeTools array", () => {
+Deno.test("shouldIncludeTool should handle empty includeTools Set", () => {
   const filters: ToolFilters = {
-    includeTools: [],
+    includeTools: new Set([]),
   };
 
   // Empty includeTools means include all (same as not specifying it)
   assertEquals(shouldIncludeTool("any_tool", filters), true);
 });
 
-Deno.test("shouldIncludeTool should handle empty excludeTools array", () => {
+Deno.test("shouldIncludeTool should handle empty excludeTools Set", () => {
   const filters: ToolFilters = {
-    excludeTools: [],
+    excludeTools: new Set([]),
   };
 
   // Empty excludeTools means exclude none (same as not specifying it)

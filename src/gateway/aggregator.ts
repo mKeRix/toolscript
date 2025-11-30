@@ -37,18 +37,21 @@ export class ServerAggregator implements AsyncDisposable {
   async initialize(config: ToolscriptConfig): Promise<void> {
     logger.info("Initializing server aggregator");
 
-    for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
-      if (serverConfig.includeTools || serverConfig.excludeTools) {
-        this.serverFilters.set(name, {
-          includeTools: serverConfig.includeTools,
-          excludeTools: serverConfig.excludeTools,
-        });
-      }
-    }
-
     // Connect to all servers in parallel
     const connectionPromises = Object.entries(config.mcpServers).map(
       async ([name, serverConfig]) => {
+        // Store filter configuration
+        if (serverConfig.includeTools || serverConfig.excludeTools) {
+          this.serverFilters.set(name, {
+            includeTools: serverConfig.includeTools
+              ? new Set(serverConfig.includeTools)
+              : undefined,
+            excludeTools: serverConfig.excludeTools
+              ? new Set(serverConfig.excludeTools)
+              : undefined,
+          });
+        }
+
         try {
           const client = new McpClient(name, serverConfig);
           await client.connect();

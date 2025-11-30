@@ -6,8 +6,8 @@
  * Tool filter configuration
  */
 export interface ToolFilters {
-  includeTools?: string[];
-  excludeTools?: string[];
+  includeTools?: Set<string>;
+  excludeTools?: Set<string>;
 }
 
 /**
@@ -30,15 +30,15 @@ export function shouldIncludeTool(
   const { includeTools, excludeTools } = filters;
 
   // If includeTools is specified, tool must be in the list
-  if (includeTools && includeTools.length > 0) {
-    if (!includeTools.includes(toolName)) {
+  if (includeTools && includeTools.size > 0) {
+    if (!includeTools.has(toolName)) {
       return false;
     }
   }
 
   // If excludeTools is specified, tool must not be in the list
-  if (excludeTools && excludeTools.length > 0) {
-    if (excludeTools.includes(toolName)) {
+  if (excludeTools && excludeTools.size > 0) {
+    if (excludeTools.has(toolName)) {
       return false;
     }
   }
