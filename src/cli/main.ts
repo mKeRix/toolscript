@@ -10,6 +10,7 @@ import { execCommand } from "./commands/exec.ts";
 import { listServersCommand, listToolsCommand } from "./commands/list.ts";
 import { getTypesCommand } from "./commands/types.ts";
 import { searchCommand } from "./commands/search.ts";
+import { authCommand } from "./commands/auth.ts";
 import packageInfo from "../../deno.json" with { type: "json" };
 
 /**
@@ -20,6 +21,7 @@ const main = new Command()
   .version(packageInfo.version)
   .description("Deno-native MCP code mode CLI tool")
   .command("gateway", gatewayCommand)
+  .command("auth", authCommand)
   .command("search", searchCommand)
   .command("list-servers", listServersCommand)
   .command("list-tools", listToolsCommand)

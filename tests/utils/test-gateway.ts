@@ -15,12 +15,106 @@ export interface TestGatewayInstance extends AsyncDisposable {
   cleanup: () => Promise<void>;
 }
 
+export interface OAuthServerInstance extends AsyncDisposable {
+  port: number;
+  process: Deno.ChildProcess;
+  configFile: string;
+  cleanup: () => Promise<void>;
+}
+
+export interface StartTestGatewayOptions {
+  /** Optional environment variables to pass to the gateway process */
+  env?: Record<string, string>;
+  /** Optional config file path to use instead of creating a new one with test servers */
+  configFile?: string;
+}
+
 /**
  * Start a test gateway instance with an MCP server configured
  */
-export async function startTestGateway(): Promise<TestGatewayInstance> {
+export async function startTestGateway(
+  options?: StartTestGatewayOptions,
+): Promise<TestGatewayInstance> {
   const port = await getRandomPort();
   const hostname = "localhost";
+
+  // If a custom config is provided, skip starting test servers
+  if (options?.configFile) {
+    const cmd = new Deno.Command("deno", {
+      args: [
+        "run",
+        "--unstable-webgpu",
+        "--allow-net",
+        "--allow-read",
+        "--allow-write",
+        "--allow-env",
+        "--allow-run",
+        "--allow-sys",
+        "--allow-ffi",
+        "src/cli/main.ts",
+        "gateway",
+        "start",
+        "--port",
+        `${port}`,
+        "--hostname",
+        hostname,
+        "--config",
+        options.configFile,
+      ],
+      stdout: "piped",
+      stderr: "piped",
+      env: options?.env,
+    });
+
+    const process = cmd.spawn();
+    const url = `http://${hostname}:${port}`;
+
+    // Wait for gateway to be ready
+    let ready = false;
+    for (let i = 0; i < 100; i++) {
+      try {
+        const response = await fetch(`${url}/health`, { signal: AbortSignal.timeout(2000) });
+        if (response.ok) {
+          const health = await response.json();
+          if (health.status === "ok" && health.search?.ready) {
+            ready = true;
+            break;
+          }
+        }
+      } catch {
+        // Not ready yet
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
+    if (!ready) {
+      try {
+        process.kill("SIGTERM");
+        await process.status;
+      } catch {
+        // Already exited
+      }
+      throw new Error("Gateway with custom config failed to start");
+    }
+
+    const cleanup = async () => {
+      try {
+        process.kill("SIGTERM");
+        await process.status;
+      } catch {
+        // Already exited
+      }
+    };
+
+    return {
+      port,
+      url,
+      process,
+      configFile: options.configFile,
+      cleanup,
+      [Symbol.asyncDispose]: cleanup,
+    };
+  }
 
   // Start HTTP test server
   const httpPort = await getRandomPort();
@@ -138,7 +232,7 @@ export async function startTestGateway(): Promise<TestGatewayInstance> {
     throw new Error("SSE test server failed to start");
   }
 
-  // Create a temporary config file for the gateway with all three transport types
+  // Create a temporary config file for the gateway with test servers
   const tempConfigFile = await Deno.makeTempFile({ suffix: ".json" });
   const config = {
     mcpServers: {
@@ -187,6 +281,7 @@ export async function startTestGateway(): Promise<TestGatewayInstance> {
     ],
     stdout: "piped",
     stderr: "piped",
+    env: options?.env,
   });
 
   const process = cmd.spawn();
@@ -357,6 +452,112 @@ export async function startTestGateway(): Promise<TestGatewayInstance> {
     configFile: tempConfigFile,
     httpServerProcess,
     sseServerProcess,
+    cleanup,
+    [Symbol.asyncDispose]: cleanup,
+  };
+}
+
+/**
+ * Start an OAuth-protected test MCP server
+ */
+export async function startOAuthServer(): Promise<OAuthServerInstance> {
+  const port = await getRandomPort();
+
+  // Start OAuth-protected MCP server
+  const cmd = new Deno.Command("deno", {
+    args: [
+      "run",
+      "--allow-net",
+      "--allow-read",
+      "--allow-env",
+      "tests/fixtures/oauth-mcp-server.ts",
+      `${port}`,
+    ],
+    stdout: "piped",
+    stderr: "piped",
+  });
+  const process = cmd.spawn();
+
+  // Consume stdout/stderr to prevent resource leaks
+  (async () => {
+    try {
+      for await (const _ of process.stdout) {
+        // Consume output
+      }
+    } catch {
+      // Stream closed
+    }
+  })();
+
+  (async () => {
+    try {
+      for await (const _ of process.stderr) {
+        // Consume output
+      }
+    } catch {
+      // Stream closed
+    }
+  })();
+
+  // Wait for OAuth server to be ready
+  let ready = false;
+  for (let i = 0; i < 50; i++) {
+    try {
+      const response = await fetch(
+        `http://localhost:${port}/.well-known/oauth-authorization-server`,
+        { signal: AbortSignal.timeout(1000) },
+      );
+      if (response.ok) {
+        ready = true;
+        break;
+      }
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
+
+  if (!ready) {
+    try {
+      process.kill("SIGTERM");
+      await process.status;
+    } catch {
+      // Ignore
+    }
+    throw new Error("OAuth server failed to start");
+  }
+
+  // Create temporary config file with OAuth servers
+  // No oauth field needed - OAuth is auto-detected from server
+  const tempConfigFile = await Deno.makeTempFile({ suffix: ".json" });
+  const config = {
+    mcpServers: {
+      "oauth-auth-code": {
+        type: "http",
+        url: `http://localhost:${port}/mcp`,
+      },
+    },
+  };
+  await Deno.writeTextFile(tempConfigFile, JSON.stringify(config, null, 2));
+
+  const cleanup = async () => {
+    try {
+      await Deno.remove(tempConfigFile);
+    } catch {
+      // Already deleted
+    }
+
+    try {
+      process.kill("SIGTERM");
+      await process.status;
+    } catch {
+      // Already exited
+    }
+  };
+
+  return {
+    port,
+    process,
+    configFile: tempConfigFile,
     cleanup,
     [Symbol.asyncDispose]: cleanup,
   };

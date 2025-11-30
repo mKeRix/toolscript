@@ -3,12 +3,11 @@
  */
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import type { ServerConfig } from "../config/types.ts";
 import { getLogger } from "../utils/logger.ts";
-import packageInfo from "../../deno.json" with { type: "json" };
+import { connectToServer, McpConnection } from "./mcp-utils.ts";
+import { createOAuthStorage } from "../oauth/storage.ts";
+import { createOAuthProvider } from "../oauth/providers/index.ts";
 
 const logger = getLogger("mcp-client");
 
@@ -23,15 +22,10 @@ export interface ServerInfo {
 }
 
 /**
- * MCP client wrapper with connection state
+ * MCP client wrapper with connection state and automatic cleanup
  */
-export class McpClient {
-  private client: Client | null = null;
-  private transport:
-    | StdioClientTransport
-    | StreamableHTTPClientTransport
-    | SSEClientTransport
-    | null = null;
+export class McpClient implements AsyncDisposable {
+  private connection: McpConnection | null = null;
   private serverInfo: ServerInfo | null = null;
 
   constructor(
@@ -45,44 +39,23 @@ export class McpClient {
   async connect(): Promise<void> {
     logger.info(`Connecting to ${this.config.type} server: ${this.name}`);
 
-    // Create appropriate transport based on server type
-    if (this.config.type === "stdio") {
-      const env = this.config.env || {};
-      this.transport = new StdioClientTransport({
-        command: this.config.command,
-        args: this.config.args || [],
-        env: { ...Deno.env.toObject(), ...env },
-      });
-    } else if (this.config.type === "http") {
-      const url = new URL(this.config.url);
-      const options = this.config.headers ? { requestInit: { headers: this.config.headers } } : {};
-      this.transport = new StreamableHTTPClientTransport(url, options);
-    } else if (this.config.type === "sse") {
-      const url = new URL(this.config.url);
-      const options = this.config.headers ? { requestInit: { headers: this.config.headers } } : {};
-      this.transport = new SSEClientTransport(url, options);
-    } else {
-      // TypeScript exhaustiveness check
-      const exhaustiveCheck: never = this.config;
-      throw new Error(`Unsupported server type: ${(exhaustiveCheck as ServerConfig).type}`);
-    }
+    // For HTTP/SSE servers, create an OAuth provider for injecting auth only
+    // Will not trigger the auth flow on unauthenticated errors
+    // User must authenticate separately using 'toolscript auth <server-name>'
+    const authProvider = ["http", "sse"].includes(this.config.type)
+      ? createOAuthProvider(this.name, createOAuthStorage(), "")
+      : undefined;
 
-    // Create and connect client
-    this.client = new Client(
-      {
-        name: "toolscript-gateway",
-        version: packageInfo.version,
-      },
-      {
-        capabilities: {},
-      },
-    );
-
-    await this.client.connect(this.transport);
+    this.connection = await connectToServer({
+      serverName: this.name,
+      serverConfig: this.config,
+      authProvider,
+      timeoutMs: 30000, // 30 second timeout
+    });
 
     // Get server information
-    const version = this.client.getServerVersion();
-    const instructions = this.client.getInstructions();
+    const version = this.connection.client.getServerVersion();
+    const instructions = this.connection.client.getInstructions();
 
     this.serverInfo = {
       name: version?.name || this.name,
@@ -97,13 +70,9 @@ export class McpClient {
    * Disconnect from the MCP server
    */
   async disconnect(): Promise<void> {
-    if (this.client) {
-      await this.client.close();
-      this.client = null;
-    }
-    if (this.transport) {
-      await this.transport.close();
-      this.transport = null;
+    if (this.connection) {
+      await this.connection.cleanup();
+      this.connection = null;
     }
     logger.info(`Disconnected from server: ${this.name}`);
   }
@@ -112,17 +81,17 @@ export class McpClient {
    * Get the connected client
    */
   getClient(): Client {
-    if (!this.client) {
+    if (!this.connection) {
       throw new Error(`Client not connected: ${this.name}`);
     }
-    return this.client;
+    return this.connection.client;
   }
 
   /**
    * Check if the client is connected
    */
   isConnected(): boolean {
-    return this.client !== null;
+    return this.connection !== null;
   }
 
   /**
@@ -163,5 +132,12 @@ export class McpClient {
       arguments: args,
     });
     return response.content;
+  }
+
+  /**
+   * Automatic cleanup when using `await using` syntax
+   */
+  async [Symbol.asyncDispose](): Promise<void> {
+    await this.disconnect();
   }
 }
