@@ -4,7 +4,7 @@
 `add-oauth2-authentication`
 
 ## Summary
-Add OAuth2 authentication support to toolscript's MCP client layer, enabling connections to OAuth2-protected MCP servers. Authentication will be handled at the gateway level with persistent token storage and support for both interactive (Authorization Code) and non-interactive (Client Credentials) flows.
+Add OAuth2 authentication support to toolscript's MCP client layer, enabling connections to OAuth2-protected MCP servers. Authentication will be handled at the gateway level with persistent token storage using dynamic client registration and the Authorization Code flow.
 
 ## Motivation
 Many MCP servers require OAuth2 authentication to access protected resources and APIs. Currently, toolscript only supports:
@@ -15,8 +15,8 @@ This limits integration with OAuth2-protected services like GitHub, Google APIs,
 
 ## Goals
 1. Enable toolscript to connect to OAuth2-protected MCP servers using standard OAuth discovery
-2. Support both Authorization Code (user-facing) and Client Credentials (service account) flows
-3. Persist tokens securely between gateway restarts using system keychain with file fallback
+2. Support Authorization Code flow with dynamic client registration
+3. Persist tokens securely between gateway restarts using file-based storage
 4. Handle token refresh automatically via MCP SDK
 5. Leverage the MCP TypeScript SDK's built-in OAuth2 support as much as possible
 6. Provide explicit user control over Authorization Code authentication via CLI command
@@ -29,27 +29,28 @@ This limits integration with OAuth2-protected services like GitHub, Google APIs,
 - OAuth1.0a or other legacy authentication protocols
 - Automatic browser opening during gateway startup (explicit auth command only)
 - Custom OAuth2 provider implementations (use MCP SDK's providers)
+- Supporting Client Credentials flow (Authorization Code only)
+- OAuth configuration parameters in config file (discovery-based only)
 
 ## Implementation Approach
 - Use MCP server's OAuth discovery endpoint to obtain authorization metadata
-- Minimal config: only `clientId` and optionally `clientSecret` required
-- Infer flow type from credentials: clientSecret present = client_credentials, absent = authorization_code
+- Support dynamic client registration for obtaining client credentials
 - New CLI command `toolscript auth <server-name>` for explicit Authorization Code flow
-- Implement persistent token storage using keychain library with file fallback
+- Implement persistent token storage using file-based storage with 0600 permissions
 - Integrate MCP SDK's OAuthClientProvider with custom storage backend
 - Tool calls to unauthenticated servers fail with actionable error messages
 
 ## Dependencies
 - MCP TypeScript SDK's OAuth2 client support (already available)
-- System keychain access library (e.g., keytar or platform-specific APIs)
+- Deno filesystem APIs for secure file storage
 - No breaking changes to existing configuration format
 
 ## Risks and Mitigations
 **Risk**: OAuth discovery not available on all servers
 - **Mitigation**: Fail with clear error if discovery endpoint missing, document requirement
 
-**Risk**: Token storage security
-- **Mitigation**: Use system keychain when available, file fallback with 0600 permissions
+**Risk**: Token storage security (file-based, no encryption)
+- **Mitigation**: Use 0600 file permissions and 0700 directory permissions on Unix-like systems. Future enhancement could add OS-specific keychain support via FFI
 
 **Risk**: User confusion about auth requirements
 - **Mitigation**: Clear error messages indicating auth is required, show exact command to run
@@ -58,10 +59,8 @@ This limits integration with OAuth2-protected services like GitHub, Google APIs,
 - **Mitigation**: MCP SDK handles refresh automatically, fall back to re-auth if refresh fails
 
 ## Success Criteria
-- Users can configure OAuth2 servers with minimal config (just clientId/clientSecret)
 - OAuth discovery automatically obtains authorization endpoints
-- `toolscript auth <server>` command completes Authorization Code flow
-- Client Credentials flow authenticates automatically without user interaction
+- `toolscript auth <server>` command completes Authorization Code flow with dynamic client registration
 - Tokens are stored securely and persist between gateway restarts
 - Token refresh happens automatically via MCP SDK
 - Tool calls to unauthenticated servers fail with clear, actionable error messages

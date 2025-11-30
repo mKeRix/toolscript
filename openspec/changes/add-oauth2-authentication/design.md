@@ -26,8 +26,8 @@ OAuth2 authentication will be implemented at the **gateway layer** in the MCP cl
 │ └─────────────────────────────────────────────────────────┘ │
 │ ┌─────────────────────────────────────────────────────────┐ │
 │ │ Token Storage                                            │ │
-│ │ - System keychain (macOS/Windows/Linux)                 │ │
-│ │ - File-based fallback (~/.toolscript/oauth-tokens/)     │ │
+│ │ - File-based storage (~/.toolscript/oauth/)             │ │
+│ │ - Secure permissions (0600 files, 0700 directory)       │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │ ┌─────────────────────────────────────────────────────────┐ │
 │ │ Callback Server (Authorization Code flow)               │ │
@@ -113,28 +113,24 @@ No explicit `flow` field needed.
 
 ## OAuth2 Data Storage Strategy
 
-OAuth2 data (client registration + tokens) stored per-user with security priority: system keychain first, filesystem fallback.
+OAuth2 data (client registration + tokens) stored per-user using secure file-based storage.
 
-### Storage Backends
+### Storage Implementation
 
-**Primary: System Keychain (OS Credential Manager)**
-- **macOS**: Keychain via Security framework (Deno FFI)
-- **Windows**: Credential Manager via Windows API
-- **Linux**: Secret Service API (libsecret)
-- Key format: `toolscript:oauth:<server-name>`
-- Stores entire OAuth data JSON as encrypted blob
-- OS-managed encryption and access control
-
-**Fallback: File-Based**
-- Used when OS credential manager unavailable
+**File-Based Storage**
 - Location: `~/.toolscript/oauth/<server-name>.json`
-- File permissions: 0600 (read/write owner only)
-- **No encryption** - data stored as plaintext JSON
-- System logs warning when using file storage
+- File permissions: 0600 (read/write owner only) on Unix-like systems
+- Directory permissions: 0700 (owner only)
+- **No encryption** - data stored as plaintext JSON, security relies on filesystem permissions
+- Server names are sanitized to prevent directory traversal attacks
 
-### Combined Storage Format
+**Future Enhancement:**
+- OS-specific keychain support could be added via Deno FFI for enhanced security
+- Would require platform-specific implementations (macOS Keychain, Windows Credential Manager, Linux Secret Service)
 
-Both storage backends use the same JSON structure:
+### Storage Format
+
+OAuth data is stored as JSON with the following structure:
 
 ```json
 {

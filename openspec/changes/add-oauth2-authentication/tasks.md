@@ -1,5 +1,34 @@
 # Tasks: Add OAuth2 Authentication for MCP Servers
 
+## Implementation Status
+
+**✅ Core Implementation Complete** - All critical OAuth2 functionality has been implemented:
+
+### Completed Tasks:
+- [x] Task 1.1: OAuth2 configuration types
+- [x] Task 1.2: Configuration schema validation
+- [x] Task 2.1: Storage approach selected (file-based with secure permissions)
+- [x] Task 2.2: OAuth data storage implementation
+- [x] Task 3.1: Authorization Code provider
+- [x] Task 3.2: Client Credentials provider
+- [x] Task 3.3: Provider factory
+- [x] Task 4.1: McpClient OAuth integration
+- [x] Task 5.1: Standalone `toolscript auth` command
+- [x] Task 5.2: Auth command registered in CLI
+- [x] Task 5.3: Browser opening utility
+- [x] Task 6.2: OAuth2 logging throughout
+
+### Pending Tasks:
+- [ ] Task 1.3: OAuth2 documentation (docs/oauth2.md)
+- [ ] Task 6.1: Additional error message improvements
+- [ ] Task 7.1-7.3: Unit/integration/E2E tests
+- [ ] Task 7.4: README updates
+- [ ] Task 8.1-8.3: Security review, cross-platform testing, changelog
+
+### Skipped Tasks:
+- Task 4.2: OAuth callback in gateway (not needed - auth command runs standalone callback server)
+- Task 4.3: OAuth state tracking in Aggregator (handled by McpClient)
+
 ## Overview
 
 This implementation leverages MCP SDK's built-in OAuth2 support and OAuth discovery, resulting in a much simpler implementation than manual OAuth configuration.

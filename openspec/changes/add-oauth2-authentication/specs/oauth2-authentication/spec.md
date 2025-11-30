@@ -54,7 +54,7 @@ The system SHALL support dynamic client registration (RFC 7591) as the primary m
 
 #### Scenario: Save dynamically registered client info
 - **WHEN** dynamic registration succeeds
-- **THEN** system saves client_id and client_secret (if provided) to storage backend (keychain or file)
+- **THEN** system saves client_id and client_secret (if provided) to file-based storage
 
 #### Scenario: Reuse dynamically registered client
 - **WHEN** stored client registration exists in storage backend
@@ -66,52 +66,30 @@ The system SHALL support dynamic client registration (RFC 7591) as the primary m
 
 #### Scenario: Fallback when registration unavailable
 - **WHEN** discovery metadata lacks registration_endpoint
-- **AND** no oauth.clientId in config
-- **THEN** system reports error asking user to add oauth.clientId to config
-
-### Requirement: Client Credential Priority
-The system SHALL obtain client credentials using a three-tier priority system.
-
-#### Scenario: Priority 1 - Stored client registration
-- **WHEN** storage backend contains client registration for server
-- **THEN** system uses that client_id as first priority
-
-#### Scenario: Priority 2 - Config oauth.clientId
-- **WHEN** no stored client registration exists
-- **AND** config includes oauth.clientId
-- **THEN** system uses config value as second priority
-
-#### Scenario: Priority 3 - Dynamic registration
-- **WHEN** no stored client and no config oauth.clientId
-- **AND** server supports dynamic registration
-- **THEN** system performs dynamic registration as third priority
-
-#### Scenario: All priorities exhausted
-- **WHEN** all three priorities fail to provide client credentials
-- **THEN** system reports error with instructions to add oauth.clientId to config
+- **AND** no stored client registration exists
+- **THEN** system reports error indicating server does not support dynamic registration
 
 ### Requirement: Combined OAuth Data Storage
-The system SHALL store both client registration and tokens together per server, using OS credential manager when available.
+The system SHALL store both client registration and tokens together per server using secure file-based storage.
 
-#### Scenario: Primary storage via system keychain
-- **WHEN** OS credential manager is available (macOS Keychain, Windows Credential Manager, Linux Secret Service)
-- **THEN** entire OAuth data JSON stored in keychain with key `toolscript:oauth:<server>`
+#### Scenario: File-based storage with secure permissions
+- **WHEN** OAuth data needs to be stored
+- **THEN** data is written to `~/.toolscript/oauth/<server>.json`
+- **AND** file permissions are set to 0600 (read/write owner only) on Unix-like systems
+- **AND** directory permissions are set to 0700 (owner only)
 
-#### Scenario: Fallback to file storage
-- **WHEN** OS credential manager is unavailable
-- **THEN** OAuth data stored in `~/.toolscript/oauth/<server>.json` with 0600 permissions (no encryption)
-
-#### Scenario: Warning when using file storage
-- **WHEN** OAuth data stored in file instead of keychain
-- **THEN** system logs warning about reduced security
+#### Scenario: Server name sanitization
+- **WHEN** determining storage file path
+- **THEN** server name is sanitized to prevent directory traversal attacks
+- **AND** only alphanumeric characters, underscores, and hyphens are allowed
 
 #### Scenario: Storage contains client and tokens sections
-- **WHEN** OAuth data is stored (keychain or file)
+- **WHEN** OAuth data is stored
 - **THEN** data has structure with client{} and tokens{} sections
 
 #### Scenario: Client section includes registration source
 - **WHEN** client info is stored
-- **THEN** client section includes registration_source field ("dynamic" or "config")
+- **THEN** client section includes registration_source field ("dynamic")
 
 #### Scenario: Tokens section matches MCP SDK OAuthTokens
 - **WHEN** tokens are saved
@@ -119,23 +97,14 @@ The system SHALL store both client registration and tokens together per server, 
 
 #### Scenario: Load combined data on provider creation
 - **WHEN** OAuth provider is created for server
-- **THEN** provider loads both client info and tokens from storage backend (keychain or file)
+- **THEN** provider loads both client info and tokens from file-based storage
 
-### Requirement: Flow Type Inference
-The system SHALL automatically determine OAuth2 flow type based on available credentials.
+### Requirement: Authorization Code Flow
+The system SHALL use Authorization Code flow for all OAuth2 authentication.
 
-#### Scenario: Infer authorization_code when no clientSecret
-- **WHEN** oauth config has clientId but no clientSecret
-- **OR** no oauth config at all (dynamic registration)
-- **THEN** system uses Authorization Code flow
-
-#### Scenario: Infer client_credentials when clientSecret present
-- **WHEN** oauth config has both clientId and clientSecret
-- **THEN** system uses Client Credentials flow
-
-#### Scenario: No explicit flow selector needed
-- **WHEN** OAuth configuration is processed
-- **THEN** no flow field is required or allowed in configuration
+#### Scenario: Authorization Code flow always used
+- **WHEN** OAuth authentication is required
+- **THEN** system uses Authorization Code flow with dynamic client registration or pre-registered client credentials
 
 ### Requirement: Standalone Auth Command
 The system SHALL provide a standalone auth command that does not require the gateway to be running.
@@ -160,19 +129,11 @@ The system SHALL provide a standalone auth command that does not require the gat
 - **WHEN** authentication completes successfully
 - **THEN** command displays success message and exits with code 0
 
-#### Scenario: Auth command fails for client_credentials
-- **WHEN** user runs `toolscript auth` on server with client_credentials
-- **THEN** command reports error indicating auth is automatic for that flow
-
 ### Requirement: MCP SDK OAuth Provider Integration
 The system SHALL use MCP SDK's built-in OAuth providers with persistent storage backend.
 
-#### Scenario: Use SDK's ClientCredentialsProvider
-- **WHEN** flow is client_credentials
-- **THEN** system extends MCP SDK's ClientCredentialsProvider class
-
-#### Scenario: Implement OAuthClientProvider for authorization code
-- **WHEN** flow is authorization_code
+#### Scenario: Implement OAuthClientProvider
+- **WHEN** OAuth authentication is required
 - **THEN** system implements MCP SDK's OAuthClientProvider interface
 
 #### Scenario: Provider delegates OAuth logic to MCP SDK
@@ -214,16 +175,12 @@ The system SHALL automatically refresh expired OAuth2 tokens via MCP SDK.
 - **WHEN** token refresh fails for authorization_code server
 - **THEN** system clears stored tokens and requires user to run `toolscript auth` again
 
-#### Scenario: Refresh failure for client_credentials
-- **WHEN** token refresh fails for client_credentials server
-- **THEN** system automatically requests new tokens using credentials from config
-
 ### Requirement: Gateway OAuth Integration
 The system SHALL integrate OAuth authentication into gateway connection flow.
 
 #### Scenario: Gateway loads OAuth data from storage
 - **WHEN** gateway starts with server
-- **THEN** system attempts to load OAuth data from storage backend (keychain or file)
+- **THEN** system attempts to load OAuth data from file-based storage
 
 #### Scenario: Gateway connects with stored tokens
 - **WHEN** valid tokens exist in storage
@@ -231,40 +188,7 @@ The system SHALL integrate OAuth authentication into gateway connection flow.
 
 #### Scenario: Gateway warns about missing auth
 - **WHEN** server requires OAuth but no stored tokens exist
-- **AND** flow is authorization_code
 - **THEN** gateway logs warning with `toolscript auth <server>` command
-
-#### Scenario: Gateway auto-authenticates client_credentials
-- **WHEN** server requires OAuth with client_credentials
-- **AND** oauth config has clientId and clientSecret
-- **THEN** gateway automatically requests tokens without user interaction
-
-### Requirement: OAuth2 Configuration Validation
-The system SHALL validate OAuth2 configuration when present.
-
-#### Scenario: OAuth field is completely optional
-- **WHEN** server config is validated
-- **THEN** oauth field is optional, not required
-
-#### Scenario: If oauth field present, clientId can be optional
-- **WHEN** oauth object exists
-- **THEN** clientId field is optional (dynamic registration may provide it)
-
-#### Scenario: clientSecret determines flow
-- **WHEN** clientSecret is provided in oauth config
-- **THEN** system uses client_credentials flow
-
-#### Scenario: Optional scopes must be string array
-- **WHEN** scopes field is present in oauth config
-- **THEN** value must be array of strings
-
-#### Scenario: Reject manual endpoint configuration
-- **WHEN** oauth config includes authorizationUrl, tokenUrl, redirectUri, or flow fields
-- **THEN** validation fails with error indicating these are not supported (discovery-only)
-
-#### Scenario: Environment variable substitution
-- **WHEN** oauth fields use ${VAR} syntax
-- **THEN** system substitutes values from environment before use
 
 ### Requirement: OAuth2 Logging
 The system SHALL log OAuth2 authentication events for debugging.
@@ -279,11 +203,7 @@ The system SHALL log OAuth2 authentication events for debugging.
 
 #### Scenario: Log client credential source
 - **WHEN** client credentials are obtained
-- **THEN** log source (stored, config, or dynamic) at INFO level
-
-#### Scenario: Log flow type inference
-- **WHEN** flow type is determined
-- **THEN** log inferred flow type at INFO level
+- **THEN** log source (stored or dynamic) at INFO level
 
 #### Scenario: Log successful authentication
 - **WHEN** tokens are successfully obtained
@@ -330,18 +250,13 @@ The system SHALL provide clear error messages for OAuth2 failures.
 #### Scenario: Server requires OAuth but no credentials available
 - **WHEN** gateway connects to server requiring OAuth
 - **AND** no stored OAuth data exists
-- **AND** no oauth config provides credentials
 - **THEN** error message: "Server requires OAuth2. Run: toolscript auth <server>"
 
 #### Scenario: Dynamic registration not supported
-- **WHEN** auth command runs with no stored or config credentials
+- **WHEN** auth command runs with no stored credentials
 - **AND** server doesn't support dynamic registration
-- **THEN** error message: "Server doesn't support dynamic registration. Add oauth.clientId to config."
+- **THEN** error message: "Server does not support dynamic client registration and cannot be authenticated without pre-registered credentials"
 
 #### Scenario: OAuth discovery fails
 - **WHEN** OAuth discovery returns error
 - **THEN** error message: "Server does not support OAuth2 or is misconfigured"
-
-#### Scenario: Client credentials invalid
-- **WHEN** client_credentials authentication fails
-- **THEN** error message includes details about credential validity and token endpoint
