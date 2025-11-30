@@ -87,7 +87,6 @@ async function checkExistingAuth(
   serverName: string,
   serverConfig: ServerConfig,
   callbackUrl: string,
-  onRedirect: (url: URL) => void,
   authProvider: OAuthClientProvider,
 ): Promise<boolean> {
   try {
@@ -95,7 +94,6 @@ async function checkExistingAuth(
       serverName,
       serverConfig,
       redirectUrl: callbackUrl,
-      onRedirect,
       authProvider,
       timeoutMs: 30000,
     });
@@ -239,9 +237,6 @@ export async function authenticateServer(serverName: string, configPath?: string
       serverName,
       serverConfig,
       callbackUrl,
-      (url: URL) => {
-        authorizationUrl = url;
-      },
       authProvider,
     );
 

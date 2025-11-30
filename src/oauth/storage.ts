@@ -92,7 +92,7 @@ export class FileOAuthStorage implements OAuthStorage {
         await Deno.chmod(filePath, 0o600);
       }
 
-      logger.debug`Retrieved OAuth data for ${serverName}`;
+      logger.debug`Saved OAuth data for ${serverName}`;
     } catch (error) {
       logger.error`Failed to save OAuth data for ${serverName}: ${error}`;
       const message = error instanceof Error ? error.message : String(error);

@@ -30,7 +30,6 @@ export interface TransportConfig {
   serverName: string;
   serverConfig: ServerConfig;
   redirectUrl?: string;
-  onRedirect?: (url: URL) => void | Promise<void>;
   authProvider?: OAuthClientProvider;
 }
 
@@ -103,7 +102,6 @@ export interface ConnectOptions {
   serverName: string;
   serverConfig: ServerConfig;
   redirectUrl?: string;
-  onRedirect?: (url: URL) => void | Promise<void>;
   authProvider?: OAuthClientProvider;
   timeoutMs?: number;
 }
@@ -165,7 +163,6 @@ export async function connectToServer(
     serverName,
     serverConfig,
     redirectUrl,
-    onRedirect,
     authProvider,
     timeoutMs = 30000, // 30 second default timeout
   } = options;
@@ -177,7 +174,6 @@ export async function connectToServer(
     serverName,
     serverConfig,
     redirectUrl,
-    onRedirect,
     authProvider,
   });
 
