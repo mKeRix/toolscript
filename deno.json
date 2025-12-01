@@ -1,6 +1,6 @@
 {
   "name": "@toolscript/cli",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "exports": "./src/cli/main.ts",
   "license": "MIT",
   "nodeModulesDir": "auto",
