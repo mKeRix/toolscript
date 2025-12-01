@@ -51,6 +51,11 @@ Toolscript is a Deno-native CLI tool and Claude Code plugin for implementing MCP
   - Configuration in `deno.json` under `test` key
   - Test files follow pattern `*.test.ts`
   - Use `@std/assert` for assertions
+- **Skill Validation**: Validate plugin skills using claude-skills-cli
+  - Run `npx claude-skills-cli validate plugins/toolscript/skills/toolscript` after skill changes
+  - Ensures progressive disclosure (description <300 chars, SKILL.md <50 lines <1000 words)
+  - Fix all errors before committing skill changes
+  - Warnings are acceptable but should be minimized
 - **CI Integration**: Run `deno fmt --check`, `deno lint`, and `deno test` in CI pipeline
 - **Pre-commit Hooks**: Optional git hooks to run formatting and linting before commits
 

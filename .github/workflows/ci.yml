@@ -41,3 +41,6 @@ jobs:
         uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Lint skill
+        run: npx -y claude-skills-cli validate plugins/toolscript/skills/toolscript
