@@ -6,7 +6,7 @@
 import { Command } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { deadline } from "@std/async/deadline";
-import { loadConfig } from "../../config/loader.ts";
+import { DEFAULT_CONFIG_PATHS, loadConfig } from "../../config/loader.ts";
 import { createOAuthStorage } from "../../oauth/storage.ts";
 import { openBrowser } from "../../oauth/browser.ts";
 import { getLogger } from "@logtape/logtape";
@@ -265,7 +265,10 @@ export const authCommand = new Command()
   .name("auth")
   .description("Authenticate with OAuth2-protected MCP servers")
   .arguments("[server-name:string]")
-  .option("--config <path:string>", "Path to configuration file")
+  .option("--config <paths:string>", "Path(s) to config file(s) (comma-separated)", {
+    default: DEFAULT_CONFIG_PATHS,
+  })
+  .env("TOOLSCRIPT_CONFIG=<paths:string>", "Config file path(s)", { prefix: "TOOLSCRIPT_" })
   .action(async (options, serverName?: string) => {
     if (!serverName) {
       await listOAuthServers(options.config);
