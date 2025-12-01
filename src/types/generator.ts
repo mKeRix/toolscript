@@ -15,11 +15,8 @@ const logger = getLogger("type-generator");
  */
 function generateFallbackInterface(typeName: string, isResult = false): string {
   if (isResult) {
-    return dedent`
-      export interface ${typeName} {
-        [key: string]: unknown;
-      }
-    `;
+    // For result types without schema, use 'unknown' to allow any return type
+    return `export type ${typeName} = unknown;`;
   }
   return `export interface ${typeName} {}`;
 }
@@ -76,6 +73,36 @@ function generateStructuredResponseBody(resultTypeName: string): string {
 }
 
 /**
+ * Generate function body for tool without outputSchema
+ */
+function generateUnstructuredResponseBody(): string {
+  return dedent`
+    const content = await response.json();
+    if (!Array.isArray(content)) {
+      throw new Error("Invalid MCP response: expected content array");
+    }
+    // Single text block: try to parse as JSON, otherwise return text
+    if (content.length === 1 && content[0].type === "text" && content[0].text) {
+      try {
+        return JSON.parse(content[0].text);
+      } catch {
+        return content[0].text;
+      }
+    }
+    // Multiple blocks: render with empty lines between
+    const blocks: string[] = [];
+    for (const item of content) {
+      if (item.type === "text" && item.text) {
+        blocks.push(item.text);
+      } else {
+        blocks.push(JSON.stringify(item, null, 2));
+      }
+    }
+    return blocks.join("\\n\\n");
+  `;
+}
+
+/**
  * Generate tool function implementation
  */
 function generateToolFunction(tool: ToolInfo): string {
@@ -86,7 +113,7 @@ function generateToolFunction(tool: ToolInfo): string {
   const docComment = tool.description ? `/** ${tool.description} */\n    ` : "";
   const responseBody = tool.outputSchema
     ? generateStructuredResponseBody(resultTypeName)
-    : "return await response.json();";
+    : generateUnstructuredResponseBody();
 
   return dedent`
     ${docComment}async ${functionId}(params: ${paramsTypeName}): Promise<${resultTypeName}> {

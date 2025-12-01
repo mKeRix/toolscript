@@ -149,9 +149,8 @@ Deno.test("generateToolsModule should handle tools without outputSchema", async 
 
   const module = await generateToolsModule(tools, "http://localhost:3000");
 
-  // Should generate generic result interface
-  assertStringIncludes(module, "interface TestSimpleResult {");
-  assertStringIncludes(module, "[key: string]: unknown;");
+  // Should generate unknown result type
+  assertStringIncludes(module, "export type TestSimpleResult = unknown;");
 });
 
 Deno.test("generateToolsModule should handle naming conventions", async () => {
@@ -214,8 +213,13 @@ Deno.test("generateToolsModule should handle raw response without outputSchema",
 
   const module = await generateToolsModule(tools, "http://localhost:3000");
 
-  // Should return raw response
-  assertStringIncludes(module, "return await response.json()");
+  // Should handle unstructured response
+  assertStringIncludes(module, "await response.json()");
+  // Should handle single text block with JSON parsing
+  assertStringIncludes(module, 'content.length === 1 && content[0].type === "text"');
+  assertStringIncludes(module, "JSON.parse(content[0].text)");
+  // Should handle multiple blocks
+  assertStringIncludes(module, "blocks.join");
   // Should not have structured content parsing
   assertEquals(module.includes("structuredContent"), false);
 });
