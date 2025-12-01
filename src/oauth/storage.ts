@@ -3,8 +3,8 @@
  * Stores OAuth client registration and tokens securely in the filesystem
  */
 
-import { join } from "https://deno.land/std@0.224.0/path/mod.ts";
-import { ensureDir } from "https://deno.land/std@0.224.0/fs/mod.ts";
+import { join } from "@std/path";
+import { ensureDir } from "@std/fs";
 import { getLogger } from "@logtape/logtape";
 import { getDefaultDataDir } from "../utils/paths.ts";
 import type { OAuthData, OAuthStorage } from "./types.ts";

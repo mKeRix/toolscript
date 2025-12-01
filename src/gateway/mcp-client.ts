@@ -2,10 +2,10 @@
  * MCP client connection management.
  */
 
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import type { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { ServerConfig } from "../config/types.ts";
 import { getLogger } from "../utils/logger.ts";
-import { connectToServer, McpConnection } from "./mcp-utils.ts";
+import { connectToServer, type McpConnection } from "./mcp-utils.ts";
 import { createOAuthStorage } from "../oauth/storage.ts";
 import { createOAuthProvider } from "../oauth/providers/index.ts";
 

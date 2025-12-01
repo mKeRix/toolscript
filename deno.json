@@ -2,9 +2,9 @@
   "name": "@toolscript/cli",
   "version": "0.1.0",
   "exports": "./src/cli/main.ts",
+  "license": "MIT",
   "nodeModulesDir": "auto",
   "tasks": {
-    "dev": "deno run --unstable-webgpu --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys --allow-ffi src/cli/main.ts",
     "cli": "deno run --unstable-webgpu --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys --allow-ffi src/cli/main.ts",
     "test": "deno test --unstable-webgpu --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys --allow-ffi",
     "test:cov": "deno test --unstable-webgpu --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys --allow-ffi --coverage=coverage/",
@@ -37,7 +37,7 @@
   },
   "lint": {
     "rules": {
-      "tags": ["recommended"]
+      "tags": ["recommended", "jsr"]
     }
   },
   "test": {
@@ -49,6 +49,8 @@
     "@logtape/logtape": "jsr:@logtape/logtape@^0.8",
     "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk@1.23.0",
     "@std/async": "jsr:@std/async@^1.0.15",
+    "@std/fs": "jsr:@std/fs@^1.0.20",
+    "@std/path": "jsr:@std/path@^1.1.3",
     "json-schema-to-typescript": "npm:json-schema-to-typescript@15.0.4",
     "zod": "npm:zod@3.25.76",
     "hono": "jsr:@hono/hono@^4.6",
@@ -58,5 +60,17 @@
     "@std/text": "jsr:@std/text@^1.0.0",
     "@huggingface/transformers": "npm:@mkerix/transformers@3.8.0-patch.3",
     "fuse.js": "npm:fuse.js@^7.0.0"
+  },
+  "publish": {
+    "exclude": [
+      "CLAUDE.md",
+      "AGENTS.md",
+      ".claude",
+      ".claude-plugin",
+      "plugins",
+      ".releaserc.json",
+      "openspec",
+      ".github"
+    ]
   }
 }
