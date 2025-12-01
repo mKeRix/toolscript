@@ -4,8 +4,7 @@ on:
   workflow_run:
     workflows: [CI]
     types: [completed]
-    # We only publish pre-releases for now
-    branches: [beta]
+    branches: [main, beta]
 
 jobs:
   release:
