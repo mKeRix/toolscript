@@ -41,9 +41,9 @@ The system SHALL support loading and merging multiple configuration files specif
 - **WHEN** config string includes spaces like `~/.toolscript.json, ./toolscript.json`
 - **THEN** system trims whitespace from each path before loading
 
-#### Scenario: Environment variable substitution in merged config
-- **WHEN** multiple configs contain `${VAR}` references
-- **THEN** environment variable substitution occurs after merge using final merged config
+#### Scenario: Environment variable substitution per file
+- **WHEN** config files contain `${VAR}` references
+- **THEN** environment variable substitution occurs for each file individually before validation and merge
 
 #### Scenario: Non-overlapping servers merged
 - **WHEN** config files define different server names
@@ -130,7 +130,7 @@ The following existing requirements remain unchanged and work with merged config
 
 - **Configuration File Format**: JSON format still required for all config files
 - **MCP Server Configuration**: Server schema unchanged, merging happens at object level
-- **Configuration Validation**: Each config file validated individually before merge
-- **Environment Variable Support**: Works the same in merged configs
+- **Configuration Validation**: Each config file has environment variables substituted and is validated individually before merge
+- **Environment Variable Support**: Works the same in merged configs, applied per-file before validation
 - **Secret Management**: Still use `${VAR}` syntax, no change
 - **Optional Configuration File**: Gateway still launches if all configs missing
