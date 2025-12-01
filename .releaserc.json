@@ -1,0 +1,15 @@
+{
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@sebbo2002/semantic-release-jsr",
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["deno.json", "deno.lock"],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
+    "@semantic-release/github"
+  ]
+}
