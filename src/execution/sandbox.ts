@@ -82,6 +82,7 @@ export async function executeSandboxed(options: SandboxOptions): Promise<{
       env: {
         TOOLSCRIPT_GATEWAY_URL: gatewayUrl,
         DENO_NO_UPDATE_CHECK: "1", // Disable update check
+        NO_COLOR: "1", // Disable color output for cleaner stderr
       },
       stdout: "piped",
       stderr: "piped",
@@ -92,8 +93,11 @@ export async function executeSandboxed(options: SandboxOptions): Promise<{
     const output = await process.output();
 
     const stdout = new TextDecoder().decode(output.stdout);
-    const stderr = new TextDecoder().decode(output.stderr);
+    let stderr = new TextDecoder().decode(output.stderr);
     const success = output.success;
+
+    // Filter out confusing hint about --no-check since we enforce type-checking
+    stderr = stderr.replace(/hint: Re-run with --no-check to skip type-checking\.\n?/g, "");
 
     return { stdout, stderr, success };
   } finally {
