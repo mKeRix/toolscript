@@ -40,9 +40,33 @@ async function searchGatewayForTools(
 }
 
 /**
+ * Deduplicate and sort tools by score
+ * Keeps the highest score for each unique toolId and returns top N results
+ */
+export function deduplicateAndSortTools(
+  tools: SearchResult[],
+  limit: number = 5,
+): SearchResult[] {
+  // Deduplicate tools by toolId, keeping the highest score for each tool
+  const toolMap = new Map<string, SearchResult>();
+  for (const tool of tools) {
+    const existing = toolMap.get(tool.tool.toolId);
+    // Keep this tool if it's new OR has a higher score than existing
+    if (!existing || tool.score > existing.score) {
+      toolMap.set(tool.tool.toolId, tool);
+    }
+  }
+
+  // Sort by confidence score (highest first) and take top N
+  return Array.from(toolMap.values())
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+}
+
+/**
  * Format context text from skills and tools
  */
-function formatContextText(skills: string[], tools: SearchResult[]): string {
+export function formatContextText(skills: string[], tools: SearchResult[]): string {
   const parts: string[] = [];
 
   if (skills.length > 0) {
@@ -65,7 +89,7 @@ ${skills.map((s) => `- Skill("${s}")`).join("\n")}`,
 /**
  * Create hook JSON response
  */
-function createHookResponse(contextText: string): HookJSONOutput {
+export function createHookResponse(contextText: string): HookJSONOutput {
   if (contextText) {
     return {
       hookSpecificOutput: {
@@ -107,20 +131,8 @@ export const claudeUsageSuggestionCommand = new Command()
         const toolResults = await Promise.all(toolSearches);
         allTools = toolResults.flat();
 
-        // Deduplicate tools by toolId, keeping the highest score for each tool
-        const toolMap = new Map<string, SearchResult>();
-        for (const tool of allTools) {
-          const existing = toolMap.get(tool.tool.toolId);
-          // Keep this tool if it's new OR has a higher score than existing
-          if (!existing || tool.score > existing.score) {
-            toolMap.set(tool.tool.toolId, tool);
-          }
-        }
-
-        // Sort by confidence score (highest first) and take top 5
-        allTools = Array.from(toolMap.values())
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 5);
+        // Deduplicate and sort tools
+        allTools = deduplicateAndSortTools(allTools, 5);
         logger.debug(`Found ${allTools.length} unique tools after deduplication`);
       }
 
