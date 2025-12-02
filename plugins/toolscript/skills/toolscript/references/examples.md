@@ -1,6 +1,47 @@
 # Toolscript Examples
 
-## Basic Example: Single Tool Call
+## Discovery Workflows
+
+### Primary Workflow: Search-Based
+
+```bash
+# Search for tools and get TypeScript code
+toolscript search "commit git changes" --output types
+
+# Execute single-line code directly
+toolscript exec '<single-line-typescript-from-search>'
+
+# For multi-line code: write to temp file and use -f flag
+toolscript exec -f /tmp/script.ts
+```
+
+Use `--threshold 0.1` for more results:
+```bash
+toolscript search "database query" --output types --threshold 0.1
+```
+
+### Alternative: Direct Tool Access
+
+If you already know which MCP tools to use:
+
+```bash
+toolscript get-types --filter git_commit  # Get specific tool's TypeScript types
+toolscript exec '<single-line-code>'      # Execute single-line code inline
+toolscript exec -f /tmp/script.ts         # Execute multi-line code from file
+```
+
+### Alternative: Browse-Based Discovery
+
+```bash
+toolscript list-servers                    # List MCP servers
+toolscript list-tools github               # List tools from server
+toolscript get-types --filter github       # Get types for server
+toolscript exec --file script.ts           # Execute from file
+```
+
+## Code Examples
+
+### Basic Example: Single Tool Call
 
 ```typescript
 import { tools } from "toolscript";

@@ -6,25 +6,7 @@ import { Command, EnumType } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { dedent } from "@std/text/unstable-dedent";
 import { fetchTypes, formatTypesOutput } from "../utils/types-output.ts";
-
-/**
- * Search result from gateway
- */
-interface SearchResultItem {
-  tool: {
-    serverName: string;
-    toolName: string;
-    toolId: string;
-    description: string;
-  };
-  score: number;
-  scoreBreakdown: {
-    semantic: number;
-    fuzzy: number;
-    combined: number;
-  };
-  reason?: string;
-}
+import type { SearchResult } from "../../search/types.ts";
 
 /**
  * Format confidence score as percentage
@@ -36,7 +18,7 @@ function formatScore(score: number): string {
 /**
  * Build confidence table in Markdown format
  */
-function buildConfidenceTable(results: SearchResultItem[]): string {
+function buildConfidenceTable(results: SearchResult[]): string {
   const rows = results.map((r) => {
     return `| ${r.tool.toolId} | ${formatScore(r.score)} | ${r.reason || "match"} |`;
   });
@@ -103,7 +85,7 @@ export const searchCommand = new Command()
         Deno.exit(1);
       }
 
-      const results: SearchResultItem[] = await searchResponse.json();
+      const results: SearchResult[] = await searchResponse.json();
 
       if (results.length === 0) {
         console.log("No tools found matching your query.");
@@ -132,7 +114,7 @@ export const searchCommand = new Command()
 /**
  * Output results in table format
  */
-function outputTableFormat(results: SearchResultItem[]): void {
+function outputTableFormat(results: SearchResult[]): void {
   const table = new Table()
     .header(["Tool", "Confidence", "Description"])
     .body(
@@ -154,7 +136,7 @@ function outputTableFormat(results: SearchResultItem[]): void {
  */
 async function outputTypesFormat(
   gatewayUrl: string,
-  results: SearchResultItem[],
+  results: SearchResult[],
 ): Promise<void> {
   // Build tool filter from results
   const toolIds = results.map((r) => r.tool.toolId).join(",");

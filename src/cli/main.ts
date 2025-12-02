@@ -11,6 +11,7 @@ import { listServersCommand, listToolsCommand } from "./commands/list.ts";
 import { getTypesCommand } from "./commands/types.ts";
 import { searchCommand } from "./commands/search.ts";
 import { authCommand } from "./commands/auth.ts";
+import { contextCommand } from "./commands/context.ts";
 import packageInfo from "../../deno.json" with { type: "json" };
 
 /**
@@ -26,7 +27,8 @@ const main = new Command()
   .command("list-servers", listServersCommand)
   .command("list-tools", listToolsCommand)
   .command("get-types", getTypesCommand)
-  .command("exec", execCommand);
+  .command("exec", execCommand)
+  .command("context", contextCommand);
 
 if (import.meta.main) {
   await main.parse(Deno.args);
