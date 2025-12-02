@@ -92,14 +92,15 @@ This shows the exact TypeScript interface for the tool's parameters and return v
 
 After understanding the tool schema, execute it:
 
-**Inline code:**
+**Single-line code (use exec directly):**
 ```bash
-toolscript exec '<typescript-code>'
+toolscript exec '<single-line-typescript-code>'
 ```
 
-**From file:**
+**Multi-line code (write to temp file and use -f flag):**
 ```bash
-toolscript exec --file <path-to-file.ts>
+# Write code to temp file first
+toolscript exec -f /tmp/script.ts
 ```
 
 ## 6. Gateway Status (Diagnostic)

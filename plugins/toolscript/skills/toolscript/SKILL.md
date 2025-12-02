@@ -16,7 +16,11 @@ Discover and execute MCP tools through the toolscript gateway.
 toolscript search "what you need" --output types
 
 # 2. Execute the generated code
-toolscript exec '<typescript-code>'
+# Single-line code: use exec directly
+toolscript exec '<single-line-typescript>'
+
+# Multi-line code: write to temp file and use -f flag
+toolscript exec -f /tmp/script.ts
 ```
 
 ## Toolscript Format

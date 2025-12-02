@@ -8,8 +8,11 @@
 # Search for tools and get TypeScript code
 toolscript search "commit git changes" --output types
 
-# Execute the generated code
-toolscript exec '<typescript-code-from-search>'
+# Execute single-line code directly
+toolscript exec '<single-line-typescript-from-search>'
+
+# For multi-line code: write to temp file and use -f flag
+toolscript exec -f /tmp/script.ts
 ```
 
 Use `--threshold 0.1` for more results:
@@ -23,7 +26,8 @@ If you already know which MCP tools to use:
 
 ```bash
 toolscript get-types --filter git_commit  # Get specific tool's TypeScript types
-toolscript exec '<typescript-code>'       # Execute inline
+toolscript exec '<single-line-code>'      # Execute single-line code inline
+toolscript exec -f /tmp/script.ts         # Execute multi-line code from file
 ```
 
 ### Alternative: Browse-Based Discovery
