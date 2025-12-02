@@ -1,39 +1,22 @@
 ---
 name: toolscript
-description: This skill should be used before performing any task to check for available MCP tools, including "search", "code lookup", "API calls", "file operations", "data queries". Also use when user asks to "call tool", "list tools", "discover tools". Discover and execute MCP tools via gateway.
+description: Discover and execute MCP tools via gateway. Use when user asks to "call tool", "list tools", or before performing tasks that might have specialized MCP capabilities.
 ---
 
 # Toolscript Skill
 
 Discover and execute MCP tools through the toolscript gateway.
 
-**Use proactively:** Before any operation, search for specialized MCP tools that might provide better capabilities.
+**Use proactively:** Before operations, search for specialized MCP tools.
 
-## Quick Start
-
-```bash
-# Search for tools and get TypeScript code
-toolscript search "commit git changes" --output types
-
-# Execute the generated code
-toolscript exec '<typescript-code-from-search>'
-```
-
-## Primary Workflow: Search-Based
+## Workflow
 
 ```bash
-toolscript search "<what-you-need>" --output types  # Get code (use --threshold 0.1 for more)
-toolscript exec '<typescript-code>'                 # Execute inline
-toolscript exec --file script.ts                    # Or from file
-```
+# 1. Search for tools and get TypeScript code
+toolscript search "what you need" --output types
 
-## Alternative: Browse-Based
-
-```bash
-toolscript list-servers                    # List MCP servers
-toolscript list-tools <server-name>        # List tools
-toolscript get-types --filter <server>     # Get types
-toolscript exec --file script.ts           # Execute
+# 2. Execute the generated code
+toolscript exec '<typescript-code>'
 ```
 
 ## Toolscript Format
@@ -46,9 +29,14 @@ const result = await tools.serverName.toolName({
 });
 ```
 
+## Alternative Workflows
+
+- **Direct access:** Use `toolscript get-types --filter <tool-name>,<2nd-tool-name>` if you know the tools
+- **Browse discovery:** Use `toolscript list-servers` and `toolscript list-tools <server>`
+
 ## References
 
-- **`references/commands.md`** - All commands and options
-- **`references/configuration.md`** - Gateway, requirements, server setup
-- **`references/troubleshooting.md`** - Diagnostics and fixes
-- **`references/examples.md`** - Working examples
+- `references/commands.md` - All commands and options
+- `references/examples.md` - Working examples and workflows
+- `references/configuration.md` - Gateway and server setup
+- `references/troubleshooting.md` - Diagnostics and fixes

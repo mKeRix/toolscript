@@ -10,6 +10,17 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "prompt_input_submit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/user-prompt-submit.sh"
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "hooks": [

@@ -6,49 +6,48 @@ This document outlines the implementation tasks for the intelligent context inje
 
 ## Phase 1: Foundation & Dependencies
 
-### Task 1.1: Add Agent SDK Dependency
+### Task 1.1: Add Agent SDK Dependency ✅
 **Goal**: Install and configure Claude Agent SDK package
 
-- Add `@anthropic-ai/claude-agent-sdk` to deno.json imports
-- Run `deno cache` to download dependencies
-- Verify types are available in IDE
+- [x] Add `@anthropic-ai/claude-agent-sdk` to deno.json imports
+- [x] Run `deno cache` to download dependencies
+- [x] Verify types are available in IDE
 
 **Deliverable**: SDK available for import
 **Test**: Import SDK in test file, verify no errors
 
 ---
 
-### Task 1.2: Create Skill Discovery Utility
+### Task 1.2: Create Skill Discovery Utility ✅
 **Goal**: Implement skill scanning from all sources (global, project, plugins)
 
-- Create `src/utils/skill-discovery.ts`
-- Implement `scanGlobalSkills()` to scan `~/.claude/skills/*/SKILL.md`
-- Implement `scanProjectSkills()` to scan `.claude/skills/*/SKILL.md`
-- Implement `loadInstalledPlugins()` to read `~/.claude/plugins/installed_plugins.json`
-- Implement `scanPluginSkills(pluginPath)` to find plugin SKILL.md files
-- Implement `parseSkillDescription(content)` to extract YAML frontmatter
-- Implement `mergeSkills()` to combine all sources and deduplicate
-- Handle missing directories and malformed YAML gracefully
+- [x] Create `src/utils/skill-discovery.ts`
+- [x] Implement `scanGlobalSkills()` to scan `~/.claude/skills/*/SKILL.md`
+- [x] Implement `scanProjectSkills()` to scan `.claude/skills/*/SKILL.md`
+- [x] Implement `loadInstalledPlugins()` to read `~/.claude/plugins/installed_plugins.json`
+- [x] Implement `scanPluginSkills(pluginPath)` to find plugin SKILL.md files
+- [x] Implement `parseSkillDescription(content)` to extract YAML frontmatter
+- [x] Implement `mergeSkills()` to combine all sources and deduplicate
+- [x] Handle missing directories and malformed YAML gracefully
 
 **Deliverable**: Utility that returns `Array<{name: string, description: string, source: string}>`
 **Test**: Unit tests with mock skill directories and SKILL.md files
 
 ---
 
-### Task 1.3: Create Agent SDK Wrapper
+### Task 1.3: Create Agent SDK Wrapper ✅
 **Goal**: Build TypeScript wrapper for Claude Agent SDK with configuration for suggestion tasks
 
-- Create `src/agent/suggestion.ts`
-- Implement `suggestContext(userPrompt, skills)` function
-- Configure Agent SDK query:
+- [x] Create `src/agent/suggestion.ts`
+- [x] Implement `suggestContext(userPrompt, skills)` function
+- [x] Configure Agent SDK query:
   - Model: "haiku" (uses user's configured model)
-  - settingSources: ["user", "project", "local"]
   - allowedTools: []
   - Custom systemPrompt for skill/tool classification
-- Implement timeout protection (5s with AbortSignal)
-- Implement response parsing and validation
-- Handle all error cases (network errors, malformed response)
-- Delegate authentication to Agent SDK
+- [x] Implement timeout protection (5s with AbortSignal)
+- [x] Implement response parsing and validation
+- [x] Handle all error cases (network errors, malformed response)
+- [x] Delegate authentication to Agent SDK
 
 **Deliverable**: Function that returns `Promise<{skills: string[], toolQueries: string[]}>`
 **Test**: Unit tests with mocked Agent SDK responses
@@ -57,26 +56,26 @@ This document outlines the implementation tasks for the intelligent context inje
 
 ## Phase 2: CLI Command Implementation
 
-### Task 2.1: Create CLI Command File
+### Task 2.1: Create CLI Command File ✅
 **Goal**: Scaffold the `context claude-usage-suggestion` command
 
-- Create `src/cli/commands/context.ts` for the context command group
-- Create `src/cli/commands/context/claude-usage-suggestion.ts` for the subcommand
-- Define command using @cliffy/command
-- Add `--prompt` and `--gateway-url` options
-- Wire up to main CLI in `src/cli/main.ts`
+- [x] Create `src/cli/commands/context.ts` for the context command group
+- [x] Create `src/cli/commands/context/claude-usage-suggestion.ts` for the subcommand
+- [x] Define command using @cliffy/command
+- [x] Add `--prompt` and `--gateway-url` options
+- [x] Wire up to main CLI in `src/cli/main.ts`
 
 **Deliverable**: Command appears in `toolscript context --help`
 **Test**: Run `toolscript context claude-usage-suggestion --help`
 
 ---
 
-### Task 2.2: Implement Command Logic
+### Task 2.2: Implement Command Logic ✅
 **Goal**: Full end-to-end flow in CLI command
 
-- Import skill discovery utility
-- Import agent wrapper
-- Implement command action:
+- [x] Import skill discovery utility
+- [x] Import agent wrapper
+- [x] Implement command action:
   1. Scan skills from all sources (global, project, plugins)
   2. Call agent wrapper with user prompt and skills
   3. Parse LLM response (skills and toolQueries)
@@ -84,7 +83,7 @@ This document outlines the implementation tasks for the intelligent context inje
   5. Format context text (skills + tools)
   6. Wrap in hook JSON response
   7. Output JSON to stdout
-- Handle errors and return empty JSON `{}` on failures
+- [x] Handle errors and return empty JSON `{}` on failures
 
 **Deliverable**: Working CLI command that outputs hook JSON response
 **Test**: Manual test with sample prompts, verify JSON output
@@ -93,14 +92,14 @@ This document outlines the implementation tasks for the intelligent context inje
 
 ---
 
-### Task 2.3: Add Gateway Search Integration
+### Task 2.3: Add Gateway Search Integration ✅
 **Goal**: Search gateway for MCP tools when URL provided
 
-- Import gateway search functionality (or use existing toolscript search)
-- Check if --gateway-url was provided
-- For each toolQuery from LLM, search gateway
-- Collect tool names and descriptions
-- Handle search failures gracefully (skip failed queries)
+- [x] Import gateway search functionality (or use existing toolscript search)
+- [x] Check if --gateway-url was provided
+- [x] For each toolQuery from LLM, search gateway
+- [x] Collect tool names and descriptions
+- [x] Handle search failures gracefully (skip failed queries)
 
 **Deliverable**: CLI finds relevant MCP tools when gateway URL provided
 **Test**: Test with and without --gateway-url, verify behavior
@@ -109,15 +108,15 @@ This document outlines the implementation tasks for the intelligent context inje
 
 ---
 
-### Task 2.4: Implement Context Formatting
+### Task 2.4: Implement Context Formatting ✅
 **Goal**: Format context text and wrap in hook JSON
 
-- Format skill suggestions: Instruct to use Skill(name)
-- Format tool suggestions: Instruct to use toolscript skill with tool names
-- Combine skills + tools into unified message
-- Use informative, helpful tone (not aggressive)
-- Wrap in hook JSON: `{"hookSpecificOutput":{"additionalContext":"..."}}`
-- Return empty JSON `{}` when nothing relevant
+- [x] Format skill suggestions: Instruct to use Skill(name)
+- [x] Format tool suggestions: Instruct to use toolscript skill with tool names
+- [x] Combine skills + tools into unified message
+- [x] Use informative, helpful tone (not aggressive)
+- [x] Wrap in hook JSON: `{"hookSpecificOutput":{"additionalContext":"..."}}`
+- [x] Return empty JSON `{}` when nothing relevant
 
 **Deliverable**: Well-formatted hook JSON responses
 **Test**: Verify JSON structure and context quality
@@ -126,13 +125,13 @@ This document outlines the implementation tasks for the intelligent context inje
 
 ---
 
-### Task 2.5: Add Fallback Behavior
+### Task 2.5: Add Fallback Behavior ✅
 **Goal**: Handle all error cases gracefully
 
-- Return empty JSON `{}` on SDK auth errors
-- Return empty JSON `{}` on timeout/network errors
-- Return empty JSON `{}` on malformed LLM responses
-- Return empty JSON `{}` on gateway search failures
+- [x] Return empty JSON `{}` on SDK auth errors
+- [x] Return empty JSON `{}` on timeout/network errors
+- [x] Return empty JSON `{}` on malformed LLM responses
+- [x] Return empty JSON `{}` on gateway search failures
 
 **Deliverable**: Command never crashes, always returns valid JSON
 **Test**: Test all error scenarios, verify valid JSON
@@ -143,25 +142,25 @@ This document outlines the implementation tasks for the intelligent context inje
 
 ## Phase 3: Gateway URL Persistence
 
-### Task 3.1: Modify SessionStart Hook Script
+### Task 3.1: Modify SessionStart Hook Script ✅
 **Goal**: Save gateway URL to temp file for hook access
 
-- Edit `plugins/toolscript/scripts/session-start.sh`
-- After starting gateway, write URL to `${TMPDIR}toolscript-gateway-${CLAUDE_SESSION_ID}.url`
-- Ensure file contains only URL (no extra text)
-- Add logging of URL file path
+- [x] Edit `plugins/toolscript/scripts/session-start.sh`
+- [x] After starting gateway, write URL to `${TMPDIR}toolscript-gateway-${CLAUDE_SESSION_ID}.url`
+- [x] Ensure file contains only URL (no extra text)
+- [x] Add logging of URL file path
 
 **Deliverable**: URL file created on session start
 **Test**: Start session, verify file exists and contains URL
 
 ---
 
-### Task 3.2: Remove Static Context Injection
+### Task 3.2: Remove Static Context Injection ✅
 **Goal**: Remove hardcoded "MUST USE TOOLSCRIPT FIRST" message from SessionStart
 
-- Edit `plugins/toolscript/scripts/session-start.sh`
-- Remove the `additionalContext` field from JSON output
-- Keep other functionality intact (gateway start, PID file, env var)
+- [x] Edit `plugins/toolscript/scripts/session-start.sh`
+- [x] Remove the `additionalContext` field from JSON output
+- [x] Keep other functionality intact (gateway start, PID file, env var)
 
 **Deliverable**: SessionStart no longer injects aggressive context
 **Test**: Start session, verify no static context appears
@@ -172,27 +171,26 @@ This document outlines the implementation tasks for the intelligent context inje
 
 ## Phase 4: UserPromptSubmit Hook Implementation
 
-### Task 4.1: Create UserPromptSubmit Hook Script
+### Task 4.1: Create UserPromptSubmit Hook Script ✅
 **Goal**: Scaffold the hook script that will be called on each user prompt
 
-- Create `plugins/toolscript/scripts/user-prompt-submit.sh`
-- Make executable (`chmod +x`)
-- Implement JSON input reading (user prompt, cwd, session_id)
-- Add basic logging to temp file
+- [x] Create `plugins/toolscript/scripts/user-prompt-submit.sh`
+- [x] Make executable (`chmod +x`)
+- [x] Implement JSON input reading (user prompt, cwd, session_id)
 
 **Deliverable**: Hook script that can be called manually
 **Test**: Echo JSON to script, verify logging works
 
 ---
 
-### Task 4.2: Integrate CLI Command Call
+### Task 4.2: Integrate CLI Command Call ✅
 **Goal**: Hook reads gateway URL and calls CLI command
 
-- In hook script, read gateway URL from ${TMPDIR}toolscript-gateway-${SESSION_ID}.url
-- If URL missing/empty: Exit successfully without calling CLI
-- If URL exists: call `toolscript context claude-usage-suggestion --prompt "$PROMPT" --gateway-url "$GATEWAY_URL"`
-- Output CLI response directly (no processing needed)
-- Handle command failures gracefully (log and exit without output)
+- [x] In hook script, read gateway URL from ${TMPDIR}toolscript-gateway-${SESSION_ID}.url
+- [x] If URL missing/empty: Exit successfully without calling CLI
+- [x] If URL exists: call `toolscript context claude-usage-suggestion --prompt "$PROMPT" --gateway-url "$GATEWAY_URL"`
+- [x] Output CLI response directly (no processing needed)
+- [x] Handle command failures gracefully (log and exit without output)
 
 **Deliverable**: Hook exits early without gateway, passes through CLI JSON when gateway exists
 **Test**: Test with and without gateway URL file
@@ -201,13 +199,13 @@ This document outlines the implementation tasks for the intelligent context inje
 
 ---
 
-### Task 4.3: Test Hook Behavior
+### Task 4.3: Test Hook Behavior ✅
 **Goal**: Verify hook correctly handles all cases
 
-- Test with gateway URL present and relevant prompt (should output CLI JSON)
-- Test with gateway URL missing (should exit without output)
-- Test with CLI returning empty JSON (should pass through `{}`)
-- Test with CLI errors (should exit without output)
+- [x] Test with gateway URL present and relevant prompt (should output CLI JSON)
+- [x] Test with gateway URL missing (should exit without output)
+- [x] Test with CLI returning empty JSON (should pass through `{}`)
+- [x] Test with CLI errors (should exit without output)
 
 **Deliverable**: Hook works correctly in all scenarios
 **Test**: Run hook with various inputs, verify correct behavior
@@ -216,12 +214,12 @@ This document outlines the implementation tasks for the intelligent context inje
 
 ---
 
-### Task 4.4: Register UserPromptSubmit Hook
+### Task 4.4: Register UserPromptSubmit Hook ✅
 **Goal**: Add hook to hooks.json so Claude Code calls it
 
-- Edit `plugins/toolscript/hooks/hooks.json`
-- Add UserPromptSubmit hook entry with matcher "prompt_input_submit"
-- Point to `${CLAUDE_PLUGIN_ROOT}/scripts/user-prompt-submit.sh`
+- [x] Edit `plugins/toolscript/hooks/hooks.json`
+- [x] Add UserPromptSubmit hook entry with matcher "prompt_input_submit"
+- [x] Point to `${CLAUDE_PLUGIN_ROOT}/scripts/user-prompt-submit.sh`
 
 **Deliverable**: Hook is registered and called by Claude Code
 **Test**: Submit prompt in Claude Code session, verify hook executes

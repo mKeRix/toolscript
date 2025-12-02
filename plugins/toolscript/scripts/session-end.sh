@@ -10,8 +10,9 @@ INPUT_JSON=$(cat)
 # Extract session_id from JSON
 SESSION_ID=$(echo "$INPUT_JSON" | jq -r '.session_id')
 
-# PID and log file locations based on session_id
+# PID, URL, and log file locations based on session_id
 PID_FILE="${TMPDIR}toolscript-gateway-${SESSION_ID}.pid"
+URL_FILE="${TMPDIR}toolscript-gateway-${SESSION_ID}.url"
 LOG_FILE="${TMPDIR}toolscript-gateway-${SESSION_ID}.log"
 
 # Read PID from file
@@ -28,5 +29,6 @@ if [ -f "$PID_FILE" ]; then
   rm -f "$PID_FILE"
 fi
 
-# Cleanup log file
+# Cleanup URL and log files
+rm -f "$URL_FILE"
 rm -f "$LOG_FILE"

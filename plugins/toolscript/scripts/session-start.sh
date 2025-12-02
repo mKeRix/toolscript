@@ -10,8 +10,9 @@ INPUT_JSON=$(cat)
 # Extract session_id from JSON and export CLAUDE_SESSION_ID
 export CLAUDE_SESSION_ID=$(echo "$INPUT_JSON" | jq -r '.session_id')
 
-# PID and log file locations based on session_id
+# PID, URL, and log file locations based on session_id
 PID_FILE="${TMPDIR}toolscript-gateway-${CLAUDE_SESSION_ID}.pid"
+URL_FILE="${TMPDIR}toolscript-gateway-${CLAUDE_SESSION_ID}.url"
 LOG_FILE="${TMPDIR}toolscript-gateway-${CLAUDE_SESSION_ID}.log"
 
 # Create CLAUDE_ENV_FILE if not set
@@ -41,6 +42,9 @@ echo "$GATEWAY_PID" > "$PID_FILE"
 # Construct gateway URL
 GATEWAY_URL="http://localhost:$FREE_PORT"
 
+# Save the gateway URL to file for UserPromptSubmit hook
+echo "$GATEWAY_URL" > "$URL_FILE"
+
 # Write environment variables to CLAUDE_ENV_FILE
 if [ -z "$CLAUDE_ENV_FILE" ]; then
     echo "ERROR: CLAUDE_ENV_FILE is not set, cannot persist environment variables" >> "$LOG_FILE"
@@ -48,15 +52,3 @@ if [ -z "$CLAUDE_ENV_FILE" ]; then
 fi
 
 echo "export TOOLSCRIPT_GATEWAY_URL=$GATEWAY_URL" >> "$CLAUDE_ENV_FILE"
-
-# Inject context encouraging use of toolscript skill
-cat <<'EOF'
-{
-  "hookSpecificOutput": {
-    "hookEventName": "SessionStart",
-    "additionalContext": "<CRITICAL_INSTRUCTION>\n\n**🔧 TOOLSCRIPT MUST BE YOUR FIRST STEP**\n\n**MANDATORY:** Before EVERY task - searches, lookups, API calls, file operations, data queries, code analysis, web requests, documentation lookups - you MUST invoke the `toolscript:toolscript` skill FIRST.\n\n**Required workflow:**\n1. Invoke `toolscript:toolscript` skill immediately\n2. Execute `toolscript search \"<what-you-need>\"` to discover MCP tools\n3. Execute the generated TypeScript code with `toolscript exec`\n4. Only fall back to built-in tools if NO MCP tools are found\n\n**This is NOT optional.** MCP tools via toolscript provide superior capabilities, better integrations, and more specialized functionality than built-in tools. You must actively search for them before defaulting to built-in capabilities.\n\n**BE PROACTIVE. CHECK FIRST. ALWAYS.**\n\n</CRITICAL_INSTRUCTION>"
-  }
-}
-EOF
-
-exit 0
