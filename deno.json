@@ -60,7 +60,7 @@
     "express": "npm:express@5.1.0",
     "@std/assert": "jsr:@std/assert@^1.0.0",
     "@std/text": "jsr:@std/text@^1.0.0",
-    "@huggingface/transformers": "npm:@mkerix/transformers@3.8.0-patch.3",
+    "@huggingface/transformers": "npm:@mkerix/transformers@3.8.0-patch.4",
     "fuse.js": "npm:fuse.js@^7.0.0"
   },
   "publish": {

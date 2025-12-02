@@ -19,7 +19,7 @@
     "jsr:@std/text@1": "1.0.16",
     "jsr:@std/text@~1.0.7": "1.0.16",
     "npm:@anthropic-ai/claude-agent-sdk@~0.1.55": "0.1.55_zod@3.25.76",
-    "npm:@mkerix/transformers@3.8.0-patch.3": "3.8.0-patch.3",
+    "npm:@mkerix/transformers@3.8.0-patch.4": "3.8.0-patch.4",
     "npm:@modelcontextprotocol/sdk@1.23.0": "1.23.0_zod@3.25.76_ajv@8.17.1_express@5.1.0",
     "npm:@modelcontextprotocol/sdk@^1.17.4": "1.23.0_zod@3.25.76_ajv@8.17.1_express@5.1.0",
     "npm:@types/node@*": "24.2.0",
@@ -139,8 +139,8 @@
         "tslib"
       ]
     },
-    "@huggingface/jinja@0.5.2": {
-      "integrity": "sha512-3KxqfOSYtHDsq6HglCH4BDHGXXHMS7ZHUHpxVGswa4l8ycCCExDR2E4nDlTo9LCa6bxp03ywf/mAIVEsO1Ov1w=="
+    "@huggingface/jinja@0.5.3": {
+      "integrity": "sha512-asqfZ4GQS0hD876Uw4qiUb7Tr/V5Q+JZuo2L+BtdrD4U40QU58nIRq3ZSgAzJgT874VLjhGVacaYfrdpXtEvtA=="
     },
     "@img/colour@1.0.0": {
       "integrity": "sha512-A5P/LfWGFSl6nsckYtjw9da+19jB8hkJ6ACTGcDfEJ0aE+l2n2El7dsVM7UVHZQ9s2lmYMWlrS21YLy2IR1LUw=="
@@ -396,10 +396,11 @@
     "@jsdevtools/ono@7.1.3": {
       "integrity": "sha512-4JQNk+3mVzK3xh2rqd6RB4J46qUR19azEHBneZyTZM+c456qOrbbM/5xcR8huNCCcbVt7+UmizG6GuUvPvKUYg=="
     },
-    "@mkerix/transformers@3.8.0-patch.3": {
-      "integrity": "sha512-Zh2JUXBVUHsH0YcnXa/RIvtrce1yGC93Ztcwvhbrg8NdMkCOZj7RNW5HvqrwRUVEnYDSjE5OshiEwGalMzvbnA==",
+    "@mkerix/transformers@3.8.0-patch.4": {
+      "integrity": "sha512-7JnKqMlB+m2mINPKCkh0Y25zvr8dA24Ft/YtL7og239Mo5UTDIvM34ToNXkgtGQZRdBpLGrlQM6VSrM+oCK2Xg==",
       "dependencies": [
         "@huggingface/jinja",
+        "onnxruntime-common@1.24.0-dev.20251116-b39e144322",
         "onnxruntime-node",
         "onnxruntime-web",
         "sharp"
@@ -1134,12 +1135,15 @@
     "onnxruntime-common@1.24.0-dev.20251104-75d35474d5": {
       "integrity": "sha512-m3BU2mSiQwiyR9B1/22xabbQs5z+LYhilktET2fTYOiRCxKdWOnlHGMgixYSXqpMRPQJrYYPFKukXs0OdoxJ5A=="
     },
+    "onnxruntime-common@1.24.0-dev.20251116-b39e144322": {
+      "integrity": "sha512-BOoomdHYmNRL5r4iQ4bMvsl2t0/hzVQ3OM3PHD0gxeXu1PmggqBv3puZicEUVOA3AtHHYmqZtjMj9FOfGrATTw=="
+    },
     "onnxruntime-node@1.24.0-dev.20251104-75d35474d5": {
       "integrity": "sha512-xaz+roHnYE6sXYeNqEaDFD/e1LkbCCtJMZ3b4u5GS5TQx27kpeojdOajqS5LbAipdVC+BHfyu6USh8eHBJBzVQ==",
       "dependencies": [
         "adm-zip",
         "global-agent",
-        "onnxruntime-common"
+        "onnxruntime-common@1.24.0-dev.20251104-75d35474d5"
       ],
       "os": ["win32", "darwin", "linux"],
       "scripts": true
@@ -1150,7 +1154,7 @@
         "flatbuffers",
         "guid-typescript",
         "long",
-        "onnxruntime-common",
+        "onnxruntime-common@1.24.0-dev.20251104-75d35474d5",
         "platform",
         "protobufjs"
       ]
@@ -1767,7 +1771,7 @@
       "jsr:@std/path@^1.1.3",
       "jsr:@std/text@1",
       "npm:@anthropic-ai/claude-agent-sdk@~0.1.55",
-      "npm:@mkerix/transformers@3.8.0-patch.3",
+      "npm:@mkerix/transformers@3.8.0-patch.4",
       "npm:@modelcontextprotocol/sdk@1.23.0",
       "npm:express@5.1.0",
       "npm:fuse.js@7",
