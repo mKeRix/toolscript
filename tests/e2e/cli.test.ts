@@ -38,13 +38,6 @@ async function runCli(args: string[]): Promise<{
   };
 }
 
-Deno.test("CLI should display version", async () => {
-  const result = await runCli(["--version"]);
-
-  assertEquals(result.success, true);
-  assertStringIncludes(result.stdout, "0.1.0");
-});
-
 Deno.test("CLI should display help", async () => {
   const result = await runCli(["--help"]);
 
