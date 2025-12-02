@@ -41,7 +41,7 @@ Toolscript requires the following to be available on the machine it is run on:
 The Toolscript CLI can be installed and upgraded from [JSR](https://jsr.io/@toolscript/cli):
 
 ```bash
-deno install --global --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys --allow-ffi --unstable-webgpu -f --name toolscript jsr:@toolscript/cli
+deno install --global --allow-net --allow-read --allow-write --allow-env --allow-run --allow-sys --allow-ffi --unstable-webgpu -r -f --name toolscript jsr:@toolscript/cli
 ```
 
 #### Claude Code
