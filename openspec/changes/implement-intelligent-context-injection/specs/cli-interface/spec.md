@@ -31,11 +31,11 @@ The CLI SHALL provide a command under the context group for LLM-based usage sugg
 
 #### Scenario: Scan installed plugins
 - **WHEN** command executes
-- **THEN** command reads `~/.claude/plugins/installed_plugins.json` to discover all installed plugins
+- **THEN** command reads `~/.claude/settings.json` to discover enabled plugins only
 
-#### Scenario: Discover skills from all plugins
-- **WHEN** plugin paths are known
-- **THEN** command scans `{plugin_path}/skills/*/SKILL.md` for each plugin to find available skills
+#### Scenario: Discover skills from enabled plugins
+- **WHEN** enabled plugin paths are known
+- **THEN** command scans `{plugin_path}/skills/*/SKILL.md` for each enabled plugin to find available skills
 
 #### Scenario: Extract skill descriptions
 - **WHEN** SKILL.md file is read
@@ -57,9 +57,9 @@ The CLI SHALL provide a command under the context group for LLM-based usage sugg
 - **WHEN** Agent SDK query is created
 - **THEN** model is set to "haiku" to use user's configured model for this category
 
-#### Scenario: Load SDK config sources
+#### Scenario: Load agent environment variables
 - **WHEN** Agent SDK query is created
-- **THEN** `settingSources` includes ["user", "project", "local"] for full config support
+- **THEN** only environment variables configured in the user's `~/.claude/settings.json` are passed to the agent
 
 #### Scenario: Disable tools for agent
 - **WHEN** Agent SDK query is created
@@ -75,7 +75,7 @@ The CLI SHALL provide a command under the context group for LLM-based usage sugg
 
 #### Scenario: Timeout protection
 - **WHEN** LLM call takes too long
-- **THEN** command aborts after 5 seconds and returns empty suggestions
+- **THEN** command aborts after 8 seconds and returns empty suggestions
 
 #### Scenario: API error handling
 - **WHEN** Claude API returns error response
