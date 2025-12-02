@@ -36,4 +36,4 @@ fi
 # 5. Output hook JSON response
 toolscript context claude-usage-suggestion \
     --prompt "$USER_PROMPT" \
-    --gateway-url "$GATEWAY_URL" 2>/dev/null || exit 0
+    --gateway-url "$GATEWAY_URL" 2>> "${TMPDIR}toolscript-gateway-${SESSION_ID}.log" || exit 0

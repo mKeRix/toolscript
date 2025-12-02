@@ -90,20 +90,20 @@ toolscript context claude-usage-suggestion:
      * systemPrompt: (custom, not Claude Code's)
      * allowedTools: []
      * Single iteration (for await one response)
-4. Parse LLM response (JSON with skills and toolQueries arrays)
-5. If --gateway-url provided:
+3. Parse LLM response (JSON with skills and toolQueries arrays)
+4. If --gateway-url provided:
    - For each toolQuery:
      - Search gateway for matching tools
      - Collect tool names and descriptions
-6. Format context text:
+5. Format context text:
    - Skills: Instruct to use Skill(name) for each
    - Tools: Instruct to use toolscript skill with tool names
    - Combined: Unified message if both present
-7. Wrap in hook JSON:
+6. Wrap in hook JSON:
    - If context: `{"hookSpecificOutput":{"additionalContext":"formatted text"}}`
    - If no context: `{}`
-8. Output JSON to stdout
-9. Exit
+7. Output JSON to stdout
+8. Exit
 ```
 
 ## Key Design Decisions
