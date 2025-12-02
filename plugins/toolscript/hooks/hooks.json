@@ -2,7 +2,6 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup",
         "hooks": [
           {
             "type": "command",
@@ -13,7 +12,6 @@
     ],
     "SessionEnd": [
       {
-        "matcher": "prompt_input_exit|other",
         "hooks": [
           {
             "type": "command",
