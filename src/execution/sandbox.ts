@@ -45,6 +45,9 @@ export async function executeSandboxed(options: SandboxOptions): Promise<{
   // Create import map
   const importMapPath = await createImportMap(gatewayUrl);
 
+  // Create temporary directory for Deno cache
+  const denoCacheDir = await Deno.makeTempDir({ prefix: "toolscript-deno-cache-" });
+
   // Prepare code for execution
   let codeFile: string | undefined;
   let cleanupCodeFile = false;
@@ -81,6 +84,7 @@ export async function executeSandboxed(options: SandboxOptions): Promise<{
       clearEnv: true,
       env: {
         TOOLSCRIPT_GATEWAY_URL: gatewayUrl,
+        DENO_DIR: denoCacheDir, // Use temporary cache directory
         DENO_NO_UPDATE_CHECK: "1", // Disable update check
         NO_COLOR: "1", // Disable color output for cleaner stderr
       },
@@ -111,6 +115,11 @@ export async function executeSandboxed(options: SandboxOptions): Promise<{
     }
     try {
       await Deno.remove(importMapPath);
+    } catch {
+      // Ignore cleanup errors
+    }
+    try {
+      await Deno.remove(denoCacheDir, { recursive: true });
     } catch {
       // Ignore cleanup errors
     }
