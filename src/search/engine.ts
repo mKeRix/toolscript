@@ -319,7 +319,7 @@ export class SearchEngine {
    */
   async dispose(): Promise<void> {
     if (this.semanticEngine) {
-      await this.semanticEngine.dispose();
+      this.semanticEngine.dispose();
     }
     if (this.cache) {
       await this.cache.save();
