@@ -9,28 +9,25 @@ Discover and execute MCP tools through the toolscript gateway.
 
 **Use proactively:** Before operations, search for specialized MCP tools.
 
-## Workflow
+## Quick Start
 
 ```bash
 # 1. Search for tools and get TypeScript code
 toolscript search "what you need" --output types
 
-# 2. Execute the generated code
-# Single-line code: use exec directly
-toolscript exec '<single-line-typescript>'
+# 2. Execute - single line
+toolscript exec 'import {tools} from "toolscript"; console.log(await tools.server.toolName({param: "value"}))'
 
-# Multi-line code: write to temp file and use -f flag
-toolscript exec -f /tmp/script.ts
+# 3. Execute - multi-line (use Write tool for /tmp/<filename>.ts)
+toolscript exec -f /tmp/<filename>.ts
 ```
 
 ## Toolscript Format
 
 ```typescript
 import { tools } from "toolscript";
-
-const result = await tools.serverName.toolName({
-  param1: "value1",
-});
+const result = await tools.serverName.toolName({param: "value"});
+console.log(result)
 ```
 
 ## Alternative Workflows
