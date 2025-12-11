@@ -12,10 +12,12 @@ export const getTypesCommand = new Command()
   .description("Get TypeScript types for tools")
   .option("-f, --filter <filter:string>", "Filter tools (comma-separated: server1,server2__tool)")
   .option("-g, --gateway-url <url:string>", "Gateway URL", { default: "http://localhost:3000" })
+  .option("--full", "Include full function implementations (default: compact mode)")
   .env("TOOLSCRIPT_GATEWAY_URL=<url:string>", "Gateway URL", { prefix: "TOOLSCRIPT_" })
   .action(async (options) => {
     try {
-      const typesCode = await fetchTypes(options.gatewayUrl, options.filter);
+      const compact = !options.full; // Compact by default, unless --full is specified
+      const typesCode = await fetchTypes(options.gatewayUrl, options.filter, compact);
       const output = formatTypesOutput(typesCode, {
         filter: options.filter,
       });

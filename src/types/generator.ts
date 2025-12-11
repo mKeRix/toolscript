@@ -105,12 +105,23 @@ function generateUnstructuredResponseBody(): string {
 /**
  * Generate tool function implementation
  */
-function generateToolFunction(tool: ToolInfo): string {
+function generateToolFunction(tool: ToolInfo, compact = false): string {
   const functionId = toFunctionId(tool.toolName);
   const paramsTypeName = `${toTypeName(tool.serverName, tool.toolName)}Params`;
   const resultTypeName = `${toTypeName(tool.serverName, tool.toolName)}Result`;
 
   const docComment = tool.description ? `/** ${tool.description} */\n    ` : "";
+
+  // Compact mode: hide implementation
+  if (compact) {
+    return dedent`
+      ${docComment}async ${functionId}(params: ${paramsTypeName}): Promise<${resultTypeName}> {
+        // ...
+      }
+    `;
+  }
+
+  // Full mode: include implementation
   const responseBody = tool.outputSchema
     ? generateStructuredResponseBody(resultTypeName)
     : generateUnstructuredResponseBody();
@@ -138,6 +149,7 @@ function generateToolFunction(tool: ToolInfo): string {
 export async function generateToolsModule(
   tools: ToolInfo[],
   _gatewayUrl: string,
+  compact = false,
 ): Promise<string> {
   if (tools.length === 0) {
     return dedent`
@@ -182,7 +194,7 @@ export async function generateToolsModule(
   for (const [serverName, serverTools] of toolsByServer) {
     const namespaceId = toNamespaceId(serverName);
     const toolFunctions = serverTools.map((tool) => {
-      const fn = generateToolFunction(tool);
+      const fn = generateToolFunction(tool, compact);
       // Indent each line by 4 spaces
       return fn.split("\n").map((line) => `    ${line}`).join("\n");
     }).join(",\n");

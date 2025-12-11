@@ -248,3 +248,74 @@ Deno.test("TypeCache should overwrite existing cache", () => {
   cache.set("second module");
   assertEquals(cache.get(), "second module");
 });
+
+Deno.test("generateToolsModule should generate compact output when compact=true", async () => {
+  const tools: ToolInfo[] = [
+    {
+      serverName: "github",
+      toolName: "create_issue",
+      qualifiedName: "github__create_issue",
+      description: "Create a GitHub issue",
+      inputSchema: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          body: { type: "string" },
+        },
+        required: ["title"],
+      },
+      outputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "number" },
+          url: { type: "string" },
+        },
+      },
+    },
+  ];
+
+  const module = await generateToolsModule(tools, "http://localhost:3000", true);
+
+  // Check for TypeScript types (should still be present)
+  assertStringIncludes(module, "GithubCreateIssueParams");
+  assertStringIncludes(module, "GithubCreateIssueResult");
+
+  // Check for tools object structure
+  assertStringIncludes(module, "export const tools = {");
+  assertStringIncludes(module, "github: {");
+  assertStringIncludes(module, "async createIssue(params: GithubCreateIssueParams)");
+
+  // Check for description comment
+  assertStringIncludes(module, "/** Create a GitHub issue */");
+
+  // Should have compact implementation (just // ...)
+  assertStringIncludes(module, "// ...");
+
+  // Should NOT have full implementation details
+  assertEquals(module.includes('Deno.env.get("TOOLSCRIPT_GATEWAY_URL")'), false);
+  assertEquals(module.includes("/tools/github__create_issue"), false);
+  assertEquals(module.includes("fetch"), false);
+});
+
+Deno.test("generateToolsModule should generate full output when compact=false", async () => {
+  const tools: ToolInfo[] = [
+    {
+      serverName: "github",
+      toolName: "create_issue",
+      qualifiedName: "github__create_issue",
+      description: "Create a GitHub issue",
+      inputSchema: { type: "object" },
+      outputSchema: { type: "object" },
+    },
+  ];
+
+  const module = await generateToolsModule(tools, "http://localhost:3000", false);
+
+  // Should have full implementation
+  assertStringIncludes(module, 'Deno.env.get("TOOLSCRIPT_GATEWAY_URL")');
+  assertStringIncludes(module, "/tools/github__create_issue");
+  assertStringIncludes(module, "fetch");
+
+  // Should NOT have compact marker
+  assertEquals(module.includes("// ..."), false);
+});

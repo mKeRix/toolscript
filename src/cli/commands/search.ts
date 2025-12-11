@@ -142,7 +142,7 @@ async function outputTypesFormat(
   const toolIds = results.map((r) => r.tool.toolId).join(",");
 
   // Fetch TypeScript types for matching tools
-  const typesCode = await fetchTypes(gatewayUrl, toolIds);
+  const typesCode = await fetchTypes(gatewayUrl, toolIds, true);
 
   // Build confidence table
   const confidenceTable = buildConfidenceTable(results);

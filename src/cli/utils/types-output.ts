@@ -24,10 +24,15 @@ export interface TypesOutputOptions {
 export async function fetchTypes(
   gatewayUrl: string,
   filter?: string,
+  compact = true,
 ): Promise<string> {
-  let url = `${gatewayUrl}/runtime/tools.ts`;
+  const url = new URL("/runtime/tools.ts", gatewayUrl);
+
   if (filter) {
-    url += `?filter=${encodeURIComponent(filter)}`;
+    url.searchParams.set("filter", filter);
+  }
+  if (compact) {
+    url.searchParams.set("compact", "true");
   }
 
   const response = await fetch(url);

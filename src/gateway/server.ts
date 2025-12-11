@@ -164,12 +164,22 @@ export class GatewayServer {
     app.get("/runtime/tools.ts", async (c) => {
       // Filter parameter (comma-separated tool identifiers)
       const filter = c.req.query("filter");
+      // Compact parameter (hide function implementations)
+      const compact = c.req.query("compact") === "true";
 
       if (filter) {
         // Generate filtered module
         const tools = this.aggregator.getToolsByFilter(filter);
         const gatewayUrl = `http://${this.hostname}:${this.port}`;
-        const module = await generateToolsModule(tools, gatewayUrl);
+        const module = await generateToolsModule(tools, gatewayUrl, compact);
+        return c.text(module, 200, { "Content-Type": "application/typescript" });
+      }
+
+      if (compact) {
+        // Generate compact version (not cached)
+        const tools = this.aggregator.getAllTools();
+        const gatewayUrl = `http://${this.hostname}:${this.port}`;
+        const module = await generateToolsModule(tools, gatewayUrl, true);
         return c.text(module, 200, { "Content-Type": "application/typescript" });
       }
 

@@ -82,7 +82,7 @@ Deno.test({
       assertEquals(result.success, true);
       assertStringIncludes(result.stdout, "echo");
       assertStringIncludes(result.stdout, "add");
-      assertStringIncludes(result.stdout, "get_current_time");
+      assertStringIncludes(result.stdout, "getCurrentTime");
     });
 
     await t.step("Gateway should list tools on stdio server", async () => {
