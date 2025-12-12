@@ -59,7 +59,7 @@ Deno.test({
   async fn() {
     // Mock navigator.gpu to simulate WebGPU availability
     const originalNavigator = globalThis.navigator;
-    (globalThis as any).navigator = { gpu: {} };
+    (globalThis as unknown as { navigator: unknown }).navigator = { gpu: {} };
 
     try {
       const engine = new SemanticEngine("Xenova/all-MiniLM-L6-v2", "auto");
@@ -71,6 +71,7 @@ Deno.test({
 
       // Create a mock pipeline function that fails on WebGPU but succeeds on CPU
       const mockPipeline = stub(
+        // deno-lint-ignore no-explicit-any
         engine as any,
         "createPipeline",
         returnsNext([
@@ -84,7 +85,7 @@ Deno.test({
           Promise.resolve({
             // Mock FeatureExtractionPipeline
             dispose: () => {},
-          } as any),
+          }),
         ]),
       );
 
@@ -114,7 +115,7 @@ Deno.test({
       }
     } finally {
       // Restore original navigator
-      (globalThis as any).navigator = originalNavigator;
+      (globalThis as unknown as { navigator: unknown }).navigator = originalNavigator;
     }
   },
 });
@@ -126,6 +127,7 @@ Deno.test({
 
     // Mock createPipeline to fail
     const mockPipeline = stub(
+      // deno-lint-ignore no-explicit-any
       engine as any,
       "createPipeline",
       returnsNext([
