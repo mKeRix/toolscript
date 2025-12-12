@@ -37,6 +37,29 @@ export class SemanticEngine {
   }
 
   /**
+   * Create a pipeline with the specified device
+   */
+  private async createPipeline(
+    device: "webgpu" | "cpu",
+    modelCacheDir: string,
+  ): Promise<FeatureExtractionPipeline> {
+    const { pipeline } = await import("@huggingface/transformers");
+
+    return await pipeline(
+      "feature-extraction",
+      this.modelName,
+      {
+        dtype: "fp32",
+        device,
+        cache_dir: modelCacheDir,
+        session_options: {
+          logSeverityLevel: 3, // ERROR level - suppress warnings
+        },
+      },
+    );
+  }
+
+  /**
    * Initialize the embedding model
    */
   async initialize(): Promise<void> {
@@ -52,48 +75,49 @@ export class SemanticEngine {
         throw new Error(`Unsupported model: ${this.modelName}`);
       }
 
-      // Dynamic import to avoid loading native modules at parse time
-      const { pipeline } = await import("@huggingface/transformers");
-
-      // Determine actual device to use
-      let deviceToUse: "webgpu" | "cpu" = "cpu";
+      // Initialize pipeline with device selection and fallback logic
+      const modelCacheDir = `${this.dataDir}/models`;
 
       if (this.device === "auto") {
-        // Try WebGPU first, fallback to CPU
+        // Try WebGPU first, then fallback to CPU if it fails
+        let webgpuAttempted = false;
+
+        // First attempt: WebGPU (if available)
         try {
-          // Test if WebGPU is available
           if (typeof navigator !== "undefined" && "gpu" in navigator) {
-            deviceToUse = "webgpu";
-            logger.info`Auto-detected WebGPU support, using GPU acceleration`;
+            logger.info`Attempting to initialize with WebGPU acceleration`;
+            webgpuAttempted = true;
+
+            this.pipelineInstance = await this.createPipeline("webgpu", modelCacheDir);
+
+            this.actualDevice = "webgpu";
+            logger.info`Successfully initialized with WebGPU acceleration`;
           } else {
-            deviceToUse = "cpu";
-            logger.info`WebGPU not available, using CPU`;
+            logger.info`WebGPU not detected, using CPU`;
           }
-        } catch {
-          deviceToUse = "cpu";
-          logger.info`WebGPU detection failed, using CPU`;
+        } catch (error) {
+          // WebGPU initialization failed, fallback to CPU
+          if (webgpuAttempted) {
+            logger.warn`WebGPU initialization failed, falling back to CPU: ${error}`;
+          }
+        }
+
+        // Second attempt: CPU (if WebGPU wasn't successful)
+        if (!this.pipelineInstance) {
+          logger.info`Initializing with CPU backend`;
+          this.pipelineInstance = await this.createPipeline("cpu", modelCacheDir);
+          this.actualDevice = "cpu";
+          logger.info`Successfully initialized with CPU backend`;
         }
       } else {
-        deviceToUse = this.device;
-        logger.info`Using configured device: ${deviceToUse}`;
+        // User explicitly specified a device - respect their choice without fallback
+        logger.info`Using configured device: ${this.device}`;
+
+        this.pipelineInstance = await this.createPipeline(this.device, modelCacheDir);
+        this.actualDevice = this.device;
+        logger.info`Successfully initialized with ${this.device}`;
       }
 
-      this.actualDevice = deviceToUse;
-
-      // Initialize pipeline with selected device
-      const modelCacheDir = `${this.dataDir}/models`;
-      this.pipelineInstance = await pipeline(
-        "feature-extraction",
-        this.modelName,
-        {
-          dtype: "fp32", // Full precision for better accuracy
-          device: deviceToUse,
-          cache_dir: modelCacheDir, // Store models in toolscript data directory
-          session_options: {
-            logSeverityLevel: 3, // ERROR level - suppress warnings
-          },
-        },
-      );
       logger.debug`Using model cache directory: ${modelCacheDir}`;
 
       this.initialized = true;
